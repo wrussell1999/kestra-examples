@@ -6,6 +6,10 @@ inputs:
     type: STRING
     defaults: https://avatars.githubusercontent.com/u/59033362?v=4
 
+  - id: discord_webhook_url
+    type: STRING
+    defaults: WEBHOOK URL
+
 tasks:
   - id: python_script
     type: io.kestra.plugin.scripts.python.Commands
@@ -25,7 +29,7 @@ tasks:
 
   - id: send_notification
     type: io.kestra.plugin.notifications.discord.DiscordExecution
-    url: WEBHOOK_URL
+    url: "{{ inputs.discord_webhook_url }}"
     avatarUrl: "{{ inputs.kestra_logo }}"
     username: Kestra Flow
     content: "Total of GitHub Stars: {{ outputs.python_script.vars['output'] }}"
