@@ -1,0 +1,36 @@
+id: api_example
+namespace: company.team
+
+inputs:
+  - id: kestra_logo
+    type: STRING
+    defaults: https://avatars.githubusercontent.com/u/59033362?v=4
+
+tasks:
+  - id: python_script
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    runner: PROCESS
+    beforeCommands:
+      - python3 -m venv .venv
+      - . .venv/bin/activate
+      - pip install -r scripts/requirements.txt
+    commands:
+      - python scripts/api_example.py
+
+  - id: python_output
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ outputs.python_script.vars['output'] }}"
+
+  - id: send_notification
+    type: io.kestra.plugin.notifications.discord.DiscordExecution
+    url: WEBHOOK_URL
+    avatarUrl: "{{ inputs.kestra_logo }}"
+    username: Kestra Flow
+    content: "Total of GitHub Stars: {{ outputs.python_script.vars['output'] }}"
+
+triggers:
+  - id: hour_trigger
+    type: io.kestra.core.models.triggers.types.Schedule
+    cron: 0 * * * *
