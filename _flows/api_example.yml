@@ -1,5 +1,5 @@
 id: api_example
-namespace: company.team
+namespace: example
 
 inputs:
   - id: kestra_logo
