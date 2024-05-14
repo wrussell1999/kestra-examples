@@ -1,0 +1,41 @@
+id: state_store_example
+namespace: example
+
+tasks:
+  - id: getState
+    type: io.kestra.core.tasks.states.Get
+    name: myState
+    
+  - id: setState
+    type: io.kestra.core.tasks.states.Set
+    name: myState
+    data:
+      name: John Doe
+
+  - id: logState
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ outputs.getState.data }}"
+
+  - id: setData
+    type: io.kestra.core.tasks.states.Set
+    name: myState
+    data:
+      name: Bob Smith
+
+  - id: getData
+    type: io.kestra.core.tasks.states.Get
+    name: myState
+
+  - id: logNewState
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ outputs.getState.data }}"
+  
+  - id: deleteState
+    type: io.kestra.core.tasks.states.Delete
+    name: myState
+
+  - id: logDelete
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ outputs.getState.data }}"
+
+  

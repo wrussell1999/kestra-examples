@@ -1,0 +1,29 @@
+id: kestra-inputs
+namespace: example
+
+inputs:
+  - id: string
+    type: STRING
+    defaults: hello
+
+  - id: optional
+    type: STRING
+    required: false
+
+  - id: int
+    type: INT
+
+  - id: float
+    type: FLOAT
+    required: false
+
+  - id: instant
+    type: DATETIME
+
+  - id: file
+    type: FILE
+
+tasks:
+  - id: log_inputs
+    type: io.kestra.core.tasks.log.Log
+    message: Success!

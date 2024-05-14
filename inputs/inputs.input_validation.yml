@@ -1,0 +1,48 @@
+id: input_validation
+namespace: inputs
+
+inputs:
+  - id: user
+    type: STRING
+    defaults: student
+    required: false
+    validator: ^student(\d+)?$
+
+  - id: int
+    type: INT
+    defaults: 3
+    min: 1
+    max: 5
+
+  - id: float
+    type: FLOAT
+    defaults: 3.2
+    min: 0.2
+    max: 5.3
+
+  - id: duration
+    type: DURATION
+    min: "PT5M6S" 
+    max: "PT12H58M46S"
+
+  - id: date
+    type: DATE
+    defaults: "2024-04-12"
+    after: "2024-04-10"
+    before: "2024-04-15"
+
+  - id: TIME
+    type: TIME
+    after: "11:01:01"
+    before: "11:04:01"
+    
+  - id: datetime
+    type: DATETIME
+    defaults: "2024-04-13T14:17:00Z"
+    after: "2024-04-10T14:19:00Z"
+    before: "2024-04-15T14:19:00Z"
+
+tasks:
+  - id: log_input
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ inputs.int }}"

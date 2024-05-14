@@ -1,0 +1,16 @@
+id: url_example
+namespace: variables
+
+variables:
+  api_url: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+tasks:
+  - id: http_request
+    type: io.kestra.plugin.fs.http.Request
+    uri: "{{ vars.api_url }}"
+    method: GET
+
+  - id: log_output
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ outputs.http_request.body }}"
+  

@@ -1,0 +1,27 @@
+id: taskrunner
+namespace: example
+description: Save and Execute the flow
+
+
+tasks:
+  - id: hello
+    type: io.kestra.plugin.scripts.shell.Script
+    taskRunner:
+      type: io.kestra.core.models.tasks.runners.types.ProcessTaskRunner
+    script: |
+      echo "Hello world!"
+
+  - id: readFileFromPython
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.DockerTaskRunner
+    commands:
+      - echo "2"
+
+  - id: "bash"
+    type: "io.kestra.core.tasks.scripts.Bash"
+    runner: DOCKER
+    dockerOptions:
+      image: php
+    commands:
+      - 'php -r print(phpversion());'

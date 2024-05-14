@@ -1,0 +1,81 @@
+id: input_types
+namespace: inputs
+
+inputs:
+  - id: string
+    type: STRING
+    defaults: "Hello World!"
+
+  - id: optional
+    type: STRING
+    required: false
+
+  - id: int
+    type: INT
+    defaults: 100
+
+  - id: bool
+    type: BOOLEAN
+    defaults: true
+
+  - id: float
+    type: FLOAT
+    defaults: 100.12
+
+  - id: value_enum
+    type: ENUM
+    defaults: VALUE_1
+    values:
+      - VALUE_1
+      - VALUE_2
+      - VALUE_3
+
+  - id: instant
+    type: DATETIME
+    defaults: "2013-08-09T14:19:00Z"
+
+  - id: date
+    type: DATE
+    defaults: "2013-10-25"
+
+  - id: time
+    type: TIME
+
+  - id: duration
+    type: DURATION
+
+  - id: file
+    type: FILE
+
+  - id: json
+    type: JSON
+    defaults: |
+      [{"name": "kestra", "rating": "best in class"}]
+
+  - id: uri
+    type: URI
+    defaults: "https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv"
+
+  - id: secret
+    type: SECRET
+
+  - id: nested.string
+    type: STRING
+    defaults: "Hello World!"
+
+tasks:
+  - id: log_inputs
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ inputs.string }} \
+              {{ inputs.optional }} \ 
+              {{ inputs.int }} \
+              {{ inputs.bool }} \
+              {{ inputs.float }} \
+              {{ inputs.value_enum }} \
+              {{ inputs.instant }} \
+              {{ inputs.time }} \
+              {{ inputs.duration }} \
+              {{ inputs.file }} \
+              {{ inputs.json }} \
+              {{ inputs.uri }} \
+              {{ inputs.nested.string }}"

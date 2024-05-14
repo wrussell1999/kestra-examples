@@ -1,0 +1,15 @@
+id: nested_inputs
+namespace: inputs
+
+inputs:
+  - id: nested.string
+    type: STRING
+    required: false
+
+  - id: nested.int
+    type: INT
+
+tasks:
+  - id: log_inputs
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ inputs.nested.string }} and {{ inputs.nested.int }}"
