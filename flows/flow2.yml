@@ -1,0 +1,6 @@
+id: flow2
+namespace: prod
+tasks:
+  - id: test
+    type: io.kestra.core.tasks.log.Log
+    message: the simplest dev-to-prod workflow ever
