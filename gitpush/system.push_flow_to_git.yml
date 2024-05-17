@@ -1,0 +1,18 @@
+id: push_flow_to_git
+namespace: system
+
+tasks:
+
+  - id: commit_and_push
+    type: io.kestra.plugin.git.PushFlows
+    username: wrussell1999
+    password: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+    url: https://github.com/wrussell1999/flows
+    branch: develop 
+    flows:
+      - hello_world
+    sourceNamespace: dev
+    targetNamespace: prod
+    gitDirectory: flows
+    commitMessage: "changes to kestra flows"
+    dryRun: false

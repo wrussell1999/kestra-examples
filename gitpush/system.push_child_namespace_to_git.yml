@@ -1,0 +1,15 @@
+id: push_child_namespace_to_git
+namespace: system
+
+tasks:
+  - id: commit_and_push
+    type: io.kestra.plugin.git.PushFlows
+    username: wrussell1999
+    password: "{{ secret('GITHUB_ACCESS_TOKEN') }}" 
+    url: https://github.com/wrussell1999/flows
+    branch: develop 
+    sourceNamespace: dev
+    targetNamespace: prod
+    gitDirectory: flows
+    commitMessage: "push all flows"
+    includeChildNamespaces: true

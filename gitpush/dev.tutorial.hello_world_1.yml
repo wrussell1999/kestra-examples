@@ -1,0 +1,12 @@
+id: hello_world_1
+namespace: dev.tutorial
+
+inputs:
+  - id: greeting
+    type: STRING
+    defaults: hey
+
+tasks:
+  - id: print_status
+    type: io.kestra.core.tasks.log.Log
+    message: hello on {{ inputs.greeting }}
