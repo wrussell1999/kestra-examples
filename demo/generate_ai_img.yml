@@ -1,0 +1,45 @@
+id: generate_ai_img
+namespace: demo
+
+inputs:
+  - id: image_prompt
+    type: STRING
+
+variables:
+  discord_prompt_webhook: "https://discord.com/api/webhooks/WEBHOOK"
+  discord_announcement_webhook: "https://discord.com/api/webhooks/WEBHOOK"
+
+tasks:
+  - id: openai
+    type: io.kestra.plugin.openai.CreateImage
+    prompt: "{{ inputs.image_prompt }}"
+    apiKey: "{{ secret('OPENAI_APIKEY') }}"
+    clientTimeout: 60
+    n: 5
+
+  - id: send_image
+    type: io.kestra.plugin.notifications.discord.DiscordExecution
+    url: "{{ vars.discord_prompt_webhook }}"
+    content: |
+      Pick an image from the list: 
+      \n0: {{ outputs.openai.images[0] }}
+      \n1: {{ outputs.openai.images[1] }}
+      \n2: {{ outputs.openai.images[2] }}
+      \n3: {{ outputs.openai.images[3] }}
+      \n4: {{ outputs.openai.images[4] }}
+      \n
+      \nPick the image here: http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}
+
+  - id: wait_for_approval
+    type: io.kestra.plugin.core.flow.Pause
+    onResume:
+      - id: pick
+        description: Select the image you'd like 
+        min: 0
+        max: 4
+        type: INT
+
+  - id: send_final_image
+    type: io.kestra.plugin.notifications.discord.DiscordExecution
+    url: "{{ vars.discord_announcement_webhook }}"
+    content: "Here's the final image: {{ outputs.openai.images[{{ outputs.wait_for_approval.onResume.pick }}] }}"
