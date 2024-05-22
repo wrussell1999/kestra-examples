@@ -1,0 +1,56 @@
+id: gen_img_approval
+namespace: demo
+
+inputs:
+  - id: image_prompt
+    type: STRING
+
+variables:
+  discord_webhook: "https://discord.com/api/webhooks/URL"
+
+tasks:
+
+  - id: gen_img
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: demo
+    flowId: generate_image
+    inputs:
+      openai_prompt: "{{ inputs.image_prompt }}"
+
+  - id: send_image
+    type: io.kestra.plugin.notifications.discord.DiscordExecution
+    content: "Are you happy with the image: {{ outputs.gen_img.outputs.image }}. Approve it here: http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}} "
+    url: "{{ vars.discord_webhook }}"
+
+  - id: wait_for_approval
+    type: io.kestra.plugin.core.flow.Pause
+    onResume:
+      - id: approve
+        description: Are you happy with the photo or not?
+        type: BOOLEAN
+
+      - id: feedback
+        description: Write the prompt again with more detail
+        type: STRING
+        
+  - id: try_again
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ outputs.wait_for_approval.onResume.approve }}"
+    then:
+      - id: approved
+        type: io.kestra.plugin.core.log.Log
+        message: "Final photo: {{ outputs.gen_img.outputs.image }}"
+    else:
+      - id: retry
+        type: io.kestra.plugin.core.flow.Subflow
+        namespace: demo
+        flowId: generate_image
+        inputs:
+          openai_prompt: "{{ outputs.wait_for_approval.onResume.feedback }}"
+      
+      - id: send_new_image
+        type: io.kestra.plugin.notifications.discord.DiscordExecution
+        content: "Here's the new image with your feedback: {{ outputs.retry.outputs.image }}"
+        url: "{{ vars.discord_webhook }}"
+      
+  
