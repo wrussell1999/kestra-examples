@@ -1,0 +1,27 @@
+id: generate_image
+namespace: demo
+
+inputs:
+  - id: openai_prompt
+    type: STRING
+
+tasks:
+  - id: openai
+    type: io.kestra.plugin.openai.CreateImage
+    prompt: "{{ inputs.openai_prompt }}"
+    apiKey: "{{ secret('OPENAI_APIKEY') }}"
+    clientTimeout: 60
+    n: 3
+
+outputs:
+  - id: image0
+    type: STRING
+    value: "{{ outputs.openai.images[0] }}"
+
+  - id: image1
+    type: STRING
+    value: "{{ outputs.openai.images[1] }}"
+
+  - id: image2
+    type: STRING
+    value: "{{ outputs.openai.images[2] }}"
