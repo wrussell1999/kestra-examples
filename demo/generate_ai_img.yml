@@ -10,12 +10,12 @@ variables:
   discord_announcement_webhook: "https://discord.com/api/webhooks/"
 
 tasks:
-  - id: gen_image
-    type: io.kestra.plugin.core.flow.Subflow
-    namespace: demo
-    flowId: generate_image
-    inputs:
-      openai_prompt: "{{ inputs.image_prompt }}"
+  - id: openai
+    type: io.kestra.plugin.openai.CreateImage
+    prompt: "{{ inputs.image_prompt }}"
+    apiKey: "{{ secret('OPENAI_APIKEY') }}"
+    clientTimeout: 60
+    n: 3
 
   - id: send_image0
     type: io.kestra.plugin.notifications.discord.DiscordIncomingWebhook
@@ -29,7 +29,7 @@ tasks:
             "title": "Image 0",
             "url": "http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}",
             "image": {
-              "url": "{{ outputs.gen_image.outputs.image0 }}"
+              "url": "{{ outputs.openai.images['0'] }}"
             }  
           }
         ]
@@ -47,7 +47,7 @@ tasks:
             "title": "Image 1",
             "url": "http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}",
             "image": {
-              "url": "{{ outputs.gen_image.outputs.image1 }}"
+              "url": "{{ outputs.openai.images['1'] }}"
             }  
           }
         ]
@@ -65,7 +65,7 @@ tasks:
             "title": "Image 2",
             "url": "http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}",
             "image": {
-              "url": "{{ outputs.gen_image.outputs.image2 }}"
+              "url": "{{ outputs.openai.images['2'] }}"
             }  
           }
         ]
@@ -90,7 +90,7 @@ tasks:
           {
             "title": "Final Image",
             "image": {
-              "url": "{{ outputs.gen_image.outputs['image' ~ outputs.wait_for_approval.onResume.pick] }}"
+              "url": "{{ outputs.openai.images['' ~ outputs.wait_for_approval.onResume.pick] }}"
             }  
           }
         ]
