@@ -6,29 +6,70 @@ inputs:
     type: STRING
 
 variables:
-  discord_prompt_webhook: "https://discord.com/api/webhooks/WEBHOOK"
-  discord_announcement_webhook: "https://discord.com/api/webhooks/WEBHOOK"
+  discord_prompt_webhook: "https://discord.com/api/webhooks/"
+  discord_announcement_webhook: "https://discord.com/api/webhooks/"
 
 tasks:
-  - id: openai
-    type: io.kestra.plugin.openai.CreateImage
-    prompt: "{{ inputs.image_prompt }}"
-    apiKey: "{{ secret('OPENAI_APIKEY') }}"
-    clientTimeout: 60
-    n: 5
+  - id: gen_image
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: demo
+    flowId: generate_image
+    inputs:
+      openai_prompt: "{{ inputs.image_prompt }}"
 
-  - id: send_image
-    type: io.kestra.plugin.notifications.discord.DiscordExecution
+  - id: send_image0
+    type: io.kestra.plugin.notifications.discord.DiscordIncomingWebhook
     url: "{{ vars.discord_prompt_webhook }}"
-    content: |
-      Pick an image from the list: 
-      \n0: {{ outputs.openai.images[0] }}
-      \n1: {{ outputs.openai.images[1] }}
-      \n2: {{ outputs.openai.images[2] }}
-      \n3: {{ outputs.openai.images[3] }}
-      \n4: {{ outputs.openai.images[4] }}
-      \n
-      \nPick the image here: http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}
+    payload: |
+      {
+        "username": "Kestra",
+        "content": "Pick an image by entering the image ID on the link",
+        "embeds": [
+          {
+            "title": "Image 0",
+            "url": "http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}",
+            "image": {
+              "url": "{{ outputs.gen_image.outputs.image0 }}"
+            }  
+          }
+        ]
+      }
+
+  - id: send_image1
+    type: io.kestra.plugin.notifications.discord.DiscordIncomingWebhook
+    url: "{{ vars.discord_prompt_webhook }}"
+    payload: |
+      {
+        "username": "Kestra",
+        "content": "Pick an image by entering the image ID on the link",
+        "embeds": [
+          {
+            "title": "Image 1",
+            "url": "http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}",
+            "image": {
+              "url": "{{ outputs.gen_image.outputs.image1 }}"
+            }  
+          }
+        ]
+      }
+
+  - id: send_image2
+    type: io.kestra.plugin.notifications.discord.DiscordIncomingWebhook
+    url: "{{ vars.discord_prompt_webhook }}"
+    payload: |
+      {
+        "username": "Kestra",
+        "content": "Pick an image by entering the image ID on the link",
+        "embeds": [
+          {
+            "title": "Image 2",
+            "url": "http://localhost:8082/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}",
+            "image": {
+              "url": "{{ outputs.gen_image.outputs.image2 }}"
+            }  
+          }
+        ]
+      }
 
   - id: wait_for_approval
     type: io.kestra.plugin.core.flow.Pause
@@ -36,10 +77,21 @@ tasks:
       - id: pick
         description: Select the image you'd like 
         min: 0
-        max: 4
+        max: 2
         type: INT
 
   - id: send_final_image
-    type: io.kestra.plugin.notifications.discord.DiscordExecution
+    type: io.kestra.plugin.notifications.discord.DiscordIncomingWebhook
     url: "{{ vars.discord_announcement_webhook }}"
-    content: "Here's the final image: {{ outputs.openai.images[{{ outputs.wait_for_approval.onResume.pick }}] }}"
+    payload: |
+      {
+        "username": "Kestra",
+        "embeds": [
+          {
+            "title": "Final Image",
+            "image": {
+              "url": "{{ outputs.gen_image.outputs['image' ~ outputs.wait_for_approval.onResume.pick] }}"
+            }  
+          }
+        ]
+      }
