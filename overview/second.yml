@@ -70,3 +70,14 @@ tasks:
       { 
         "ENTER": "HERE" 
       }
+
+  - id: notify
+    type: io.kestra.plugin.notifications.mail.MailSend
+    from: test@example.com
+    to: test@example.com
+    username: "EMAIL"
+    password: "PASSWORD"
+    host: smtp.gmail.com
+    port: 465
+    subject: "New data available for {{ outputs.upload.file.name }} - {{ outputs.upload.file.createdTime}}"
+    htmlTextContent: "<a href='https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}'>Open Google Sheet</a>"

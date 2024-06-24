@@ -1,0 +1,29 @@
+id: first
+namespace: overview_video
+
+tasks:
+  - id: download
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: upload
+    type: io.kestra.plugin.googleworkspace.drive.Upload
+    from: "{{ outputs.download.uri }}"
+    contentType: "text/csv"
+    name: "Orders"
+    parents:
+      - "1a2sg__7gizUTgGmezbfh0XtwNndaCOxf"
+    mimeType: "application/vnd.google-apps.spreadsheet"
+    serviceAccount: |
+      { 
+        "ENTER": "HERE" 
+      }
+
+  - id: notify
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: https://hooks.slack.com/services/WEBHOOK
+    payload: |
+      {
+        "channel": "#flow-test",
+        "text": "New data available:  https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}"
+      }
