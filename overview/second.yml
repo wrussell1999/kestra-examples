@@ -78,3 +78,8 @@ tasks:
     port: 465
     subject: "New data available for {{ outputs.upload.file.name }} - {{ outputs.upload.file.createdTime}}"
     htmlTextContent: "<a href='https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}'>Open Google Sheet</a>"
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "@daily"
