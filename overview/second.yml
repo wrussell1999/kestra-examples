@@ -2,17 +2,14 @@ id: data_example
 namespace: overview_video
 
 inputs:
-  - id: columns_to_keep
-    type: ARRAY
-    itemType: STRING
-    defaults:
-      - brand
-      - price
+  - id: data_url
+    type: STRING
+    defaults: https://dummyjson.com/products
 
 tasks:
   - id: extract
     type: io.kestra.plugin.core.http.Download
-    uri: https://dummyjson.com/products
+    uri: "{{ inputs.data_url }}"
 
   - id: transform
     type: io.kestra.plugin.scripts.python.Script
@@ -22,7 +19,7 @@ tasks:
     outputFiles:
       - "*.json"
     env:
-      COLUMNS_TO_KEEP: "{{ inputs.columns_to_keep }}"
+      COLUMNS_TO_KEEP: '["brand","price"]'
     script: |
       import json
       import os
