@@ -1,0 +1,22 @@
+id: kafka_example
+namespace: company.myteam
+
+tasks:
+- id: log
+  type: io.kestra.plugin.core.log.Log
+  message: "{{ trigger.value }}"
+
+triggers:
+- id: realtime_trigger
+  type: io.kestra.plugin.kafka.RealtimeTrigger
+  topic: tutorial
+  properties:
+    bootstrap.servers: serverless.warpstream.com:9092
+    security.protocol: SASL_SSL
+    sasl.mechanism: PLAIN
+    sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username=USERNAME password=PASSWORD;
+  serdeProperties:
+    schema.registry.url: http://localhost:8085
+    keyDeserializer: STRING
+    valueDeserializer: STRING
+  groupId: tutorial
