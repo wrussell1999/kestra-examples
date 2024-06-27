@@ -2,9 +2,17 @@ id: kafka_example
 namespace: company.myteam
 
 tasks:
-- id: log
-  type: io.kestra.plugin.core.log.Log
-  message: "{{ trigger.value }}"
+- id: if_condition
+  type: io.kestra.plugin.core.flow.If
+  condition: "{{ trigger.value == 'error' }}"
+  then:
+    - id: log
+      type: io.kestra.plugin.core.log.Log
+      message: "Error message: {{ execution.id }}"
+  else:
+    - id: log_else
+      type: io.kestra.plugin.core.log.Log
+      message: "Nothing to worry about."
 
 triggers:
 - id: realtime_trigger
