@@ -88,7 +88,7 @@ tasks:
 
   - id: notification
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
-    url: https://hooks.slack.com/services/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
+    url: https://hooks.slack.com/services/HOOK
     payload: |
       {
         "channel": "#flow-test",
