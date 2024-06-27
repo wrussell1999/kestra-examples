@@ -66,36 +66,48 @@ tasks:
   - id: parallel_ecs_fargate_tasks
     type: io.kestra.plugin.core.flow.Parallel
     tasks:
-      - id: process_data
+      - id: run_python_1
         type: io.kestra.plugin.scripts.python.Commands
-        containerImage: ghcr.io/kestra-io/kestrapy:latest
-        taskRunner:
-          type: io.kestra.plugin.aws.runner.Batch
-          computeEnvironmentArn: "{{ outputs.parse_tf_output.vars.batch_compute_environment_arn }}"
-          jobQueueArn: "{{ outputs.parse_tf_output.vars.batch_job_queue_arn }}"
-          executionRoleArn: "{{ outputs.parse_tf_output.vars.ecs_task_execution_role_arn }}"
-          taskRoleArn: "{{ outputs.parse_tf_output.vars.ecs_task_role_arn }}"
-          accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
-          secretKeyId: "{{ secret('AWS_SECRET_ACCESS_KEY') }}"
-          region: "{{ inputs.region }}"
-          bucket: "{{ inputs.bucket }}"
         commands:
           - pip show kestra
 
-      - id: process_more_data
+      - id: run_python_2
         type: io.kestra.plugin.scripts.python.Commands
-        containerImage: ghcr.io/kestra-io/pydata:latest
-        namespaceFiles:
-          enabled: true
-        taskRunner:
-          type: io.kestra.plugin.aws.runner.Batch
-          computeEnvironmentArn: "{{ outputs.parse_tf_output.vars.batch_compute_environment_arn }}"
-          jobQueueArn: "{{ outputs.parse_tf_output.vars.batch_job_queue_arn }}"
-          executionRoleArn: "{{ outputs.parse_tf_output.vars.ecs_task_execution_role_arn }}"
-          taskRoleArn: "{{ outputs.parse_tf_output.vars.ecs_task_role_arn }}"
-          accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
-          secretKeyId: "{{ secret('AWS_SECRET_ACCESS_KEY') }}"
-          region: "{{ inputs.region }}"
-          bucket: "{{ inputs.bucket }}"
         commands:
-          - python script.py
+          - python {{ workingDir }}/script.py
+
+      - id: run_python_3
+        type: io.kestra.plugin.scripts.python.Commands
+        commands:
+          - python {{ workingDir }}/demo.py
+
+      - id: run_python_4
+        type: io.kestra.plugin.scripts.python.Commands
+        commands:
+          - python {{ workingDir }}/example.py
+
+  - id: notification
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: https://hooks.slack.com/services/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
+    payload: |
+      {
+        "channel": "#flow-test",
+        "text": "Process Complete: {{ execution.id }}"
+      }
+        
+pluginDefaults:
+  - type: io.kestra.plugin.scripts.python.Commands
+    values:
+      containerImage: ghcr.io/kestra-io/pydata:latest
+      namespaceFiles:
+        enabled: true
+      taskRunner:
+        type: io.kestra.plugin.aws.runner.Batch
+        computeEnvironmentArn: "{{ outputs.parse_tf_output.vars.batch_compute_environment_arn }}"
+        jobQueueArn: "{{ outputs.parse_tf_output.vars.batch_job_queue_arn }}"
+        executionRoleArn: "{{ outputs.parse_tf_output.vars.ecs_task_execution_role_arn }}"
+        taskRoleArn: "{{ outputs.parse_tf_output.vars.ecs_task_role_arn }}"
+        accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+        secretKeyId: "{{ secret('AWS_SECRET_ACCESS_KEY') }}"
+        region: "{{ inputs.region }}"
+        bucket: "{{ inputs.bucket }}"
