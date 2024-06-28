@@ -1,5 +1,5 @@
-id: first
-namespace: overview_video
+id: csv_to_sheet
+namespace: company.team
 
 tasks:
   - id: download
@@ -21,9 +21,9 @@ tasks:
 
   - id: notify
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
-    url: https://hooks.slack.com/services/WEBHOOK
+    url: "{{ secret('SLACK_WEBHOOK') }}"
     payload: |
       {
-        "channel": "#flow-test",
+        "channel": "#general",
         "text": "New data available:  https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}"
       }
