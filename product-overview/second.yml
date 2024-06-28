@@ -1,5 +1,5 @@
-id: data_example
-namespace: overview_video
+id: product_data_summary
+namespace: company.team
 
 inputs:
   - id: data_url
