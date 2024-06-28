@@ -88,10 +88,10 @@ tasks:
 
   - id: notification
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
-    url: https://hooks.slack.com/services/HOOK
+    url: "{{ secret('SLACK_WEBHOOK') }}"
     payload: |
       {
-        "channel": "#flow-test",
+        "channel": "#general",
         "text": "Process Complete: {{ execution.id }}"
       }
         
