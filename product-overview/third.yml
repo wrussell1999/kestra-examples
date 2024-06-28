@@ -1,5 +1,5 @@
-id: third
-namespace: overview_video
+id: parallel_data
+namespace: company.team
 
 inputs:
   - id: bucket
