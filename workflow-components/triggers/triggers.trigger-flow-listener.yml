@@ -1,0 +1,24 @@
+id: trigger-flow-listener
+namespace: triggers
+
+inputs:
+  - id: from-parent
+    type: STRING
+
+tasks:
+  - id: only-no-input
+    type: io.kestra.plugin.core.debug.Return
+    format: "v1: {{ trigger.executionId }}"
+
+triggers:
+  - id: listen-flow
+    type: io.kestra.plugin.core.trigger.Flow
+    inputs:
+      from-parent: '{{ outputs.myTask.uri }}'
+    conditions:
+      - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
+        namespace: triggers
+        flowId: trigger-flow
+      - type: io.kestra.plugin.core.condition.ExecutionStatusCondition
+        in:
+          - SUCCESS

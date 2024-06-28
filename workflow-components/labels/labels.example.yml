@@ -1,0 +1,11 @@
+id: example
+namespace: labels
+
+labels:
+  song: never-gonna-give-you-up
+  artist: rick-astley
+
+tasks:
+  - id: hello
+    type: io.kestra.plugin.core.log.Log
+    message: hello from a flow with labels

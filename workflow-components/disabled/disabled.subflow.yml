@@ -1,0 +1,8 @@
+id: subflow
+namespace: disabled
+
+tasks:
+  - id: disabled_subflow
+    type: io.kestra.plugin.core.flow.Subflow
+    flowId: example
+    namespace: disabled

@@ -1,0 +1,17 @@
+id: critical_service
+namespace: subflow
+
+tasks:
+  - id: return_data
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    sql: |
+      INSTALL httpfs;
+      LOAD httpfs;
+      SELECT sum(total) as total, avg(quantity) as avg_quantity
+      FROM read_csv_auto('https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv', header=True);
+    store: true
+
+outputs:
+  - id: some_output
+    type: STRING
+    value: "{{ outputs.return_data.uri }}"

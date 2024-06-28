@@ -1,0 +1,11 @@
+id: hello-world
+namespace: variables
+
+variables:
+  message: "Hello, World"
+  magic_number: 42
+
+tasks:
+  - id: log
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ vars.message }}"

@@ -1,0 +1,13 @@
+id: trigger
+namespace: disabled
+
+tasks:
+  - id: hello
+    type: io.kestra.plugin.core.log.Log
+    message: hello from a scheduled flow
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 * * *"
+    disabled: true

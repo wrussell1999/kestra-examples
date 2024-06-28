@@ -1,0 +1,24 @@
+id: parent_service
+namespace: subflow
+
+inputs:
+  - id: name
+    type: INT
+    min: 0
+    max: 10
+
+
+tasks:
+  - id: subflow_call
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: subflow
+    flowId: critical_service
+    wait: true
+    transmitFailed: true
+
+  - id: log_subflow_output
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - cat "{{ outputs.subflow_call.outputs.some_output }}"

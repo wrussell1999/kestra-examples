@@ -1,0 +1,12 @@
+id: concurrency_limited_flow
+namespace: concurrency
+
+concurrency:
+  behavior: FAIL # QUEUE, CANCEL or FAIL
+  limit: 2 # can be any integer >= 1
+
+tasks:
+  - id: bash
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - sleep 10

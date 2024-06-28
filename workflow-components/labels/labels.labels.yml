@@ -1,0 +1,27 @@
+id: labels
+namespace: labels
+
+inputs:
+  - id: user
+    type: STRING
+    defaults: Rick Astley
+
+  - id: url
+    type: STRING
+    defaults: song_url
+
+tasks:
+  - id: update_labels_with_map
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      customerId: "{{ inputs.user }}"
+
+  - id: get
+    type: io.kestra.plugin.core.debug.Return
+    format: https://t.ly/Vemr0
+
+  - id: update_labels_with_list
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      - key: "{{ inputs.url }}"
+        value: "{{ outputs.get.value }}"

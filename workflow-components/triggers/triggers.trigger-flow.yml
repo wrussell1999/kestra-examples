@@ -1,0 +1,7 @@
+id: trigger-flow
+namespace: triggers
+
+tasks:
+  - id: myTask
+    type: io.kestra.plugin.core.http.Download
+    uri: https://dummyjson.com/products

@@ -1,0 +1,16 @@
+id: labels_override
+namespace: labels
+
+labels:
+  song: never-gonna-give-you-up
+
+tasks:
+  - id: get
+    type: io.kestra.plugin.core.debug.Return
+    format: never-gonna-stop
+
+  - id: update_labels
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      song: "{{ outputs.get.value }}"
+      artist: rick-astley # new label

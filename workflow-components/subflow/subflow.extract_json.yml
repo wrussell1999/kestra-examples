@@ -1,0 +1,21 @@
+id: extract_json
+namespace: subflow
+
+tasks:
+  - id: api
+    type: io.kestra.plugin.core.http.Request
+    uri: https://dummyjson.com/users
+
+  - id: read_json
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.api.body }}"
+
+  - id: subflow
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: subflow
+    flowId: input_subflow
+    inputs:
+      users.firstName: "{{ outputs.api.body | jq('.users') | first | first | jq('.firstName') | first }}"
+      users.lastName: "{{ outputs.api.body | jq('.users') | first | first | jq('.lastName') | first }}"
+    wait: true
+    transmitFailed: true

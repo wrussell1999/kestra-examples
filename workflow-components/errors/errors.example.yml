@@ -1,0 +1,22 @@
+id: example
+namespace: errors
+
+description: This will always fail
+
+tasks:
+  - id: failed_task
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner: 
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - "exit 1"
+
+errors:
+  - id: alert_on_failure
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: https://hooks.slack.com/services/WEBHOOK
+    payload: |
+      {
+        "channel": "#alerts",
+        "text": "Failure alert for flow {{ flow.namespace }}.{{ flow.id }} with ID {{ execution.id }}"
+      }

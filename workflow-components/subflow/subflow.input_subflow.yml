@@ -1,0 +1,16 @@
+id: input_subflow
+namespace: subflow
+
+inputs:
+  - id: users.firstName
+    type: STRING
+    defaults: Rick
+
+  - id: users.lastName
+    type: STRING
+    defaults: Astley
+
+tasks:
+  - id: process_user_data
+    type: io.kestra.plugin.core.log.Log
+    message: hello {{ inputs.users }}

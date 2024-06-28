@@ -1,0 +1,36 @@
+id: example
+namespace: plugin_defaults
+
+tasks:
+  - id: download
+    type: io.kestra.plugin.scripts.python.Script
+    outputFiles:
+      - "products.json"
+    script: |
+      import requests
+      import json
+      data = requests.get("https://dummyjson.com/products").json()
+      with open('products.json', 'w') as f:
+        json.dump(data, f)
+
+  - id: print
+    type: io.kestra.plugin.scripts.python.Script
+    inputFiles:
+      products.json: "{{ outputs.download.outputFiles['products.json'] }}"
+    outputFiles:
+      - "products.csv"
+    script: |
+      import json
+      import pandas as pd
+      with open("{{ workingDir }}/products.json") as f:
+        data = json.load(f)
+        df = pd.json_normalize(data['products']).loc[:, ['title', 'price']]
+        df.to_csv("products.csv", index=False)
+
+pluginDefaults:
+  - type: io.kestra.plugin.scripts.python.Script
+    values:
+      taskRunner:
+        type: io.kestra.plugin.scripts.runner.docker.Docker
+        pullPolicy: ALWAYS # set it to NEVER to use a local image
+      containerImage: ghcr.io/kestra-io/pydata:latest

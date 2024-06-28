@@ -1,0 +1,17 @@
+id: flow-level-retry
+namespace: retries
+
+retry:
+  maxAttempt: 3
+  behavior: CREATE_NEW_EXECUTION # RETRY_FAILED_TASK
+  type: constant
+  interval: PT1S
+
+tasks:
+  - id: fail_1
+    type: io.kestra.plugin.core.execution.Fail
+    allowFailure: true
+
+  - id: fail_2
+    type: io.kestra.plugin.core.execution.Fail
+    allowFailure: false

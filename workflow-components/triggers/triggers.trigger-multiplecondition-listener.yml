@@ -1,0 +1,25 @@
+id: trigger-multiplecondition-listener
+namespace: triggers
+
+tasks:
+  - id: onlyListener
+    type: io.kestra.plugin.core.debug.Return
+    format: "let's go "
+
+triggers:
+  - id: multipleListenFlow
+    type: io.kestra.plugin.core.trigger.Flow
+    conditions:
+      - id: multiple
+        type: io.kestra.plugin.core.condition.MultipleCondition
+        window: P1D
+        windowAdvance: P0D
+        conditions:
+          flow-a:
+            type: io.kestra.plugin.core.condition.ExecutionFlowCondition
+            namespace: triggers
+            flowId: trigger-multiplecondition-flow-a
+          flow-b:
+            type: io.kestra.plugin.core.condition.ExecutionFlowCondition
+            namespace: triggers
+            flowId: trigger-multiplecondition-flow-b

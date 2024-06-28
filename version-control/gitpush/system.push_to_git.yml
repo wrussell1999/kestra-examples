@@ -1,0 +1,22 @@
+id: push_to_git
+namespace: system
+
+tasks:
+  - id: fetch_namespaces
+    type: io.kestra.plugin.core.http.Request
+    uri: http://host.docker.internal:8082/api/v1/flows/distinct-namespaces
+
+  - id: loop_namespaces
+    type: io.kestra.plugin.core.flow.EachParallel
+    value: "{{outputs.fetch_namespaces.body}}"
+    tasks:
+      - id: commit_and_push
+        type: io.kestra.plugin.git.PushFlows
+        username: wrussell1999
+        password: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+        url: https://github.com/wrussell1999/test
+        branch: main
+        sourceNamespace: "{{ taskrun.value }}"
+        targetNamespace: "{{ taskrun.value }}"
+        gitDirectory: "flows/{{ taskrun.value }}"
+        commitMessage: "parallel: changes to kestra flows for {{ taskrun.value }}"

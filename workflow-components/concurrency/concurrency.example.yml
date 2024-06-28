@@ -1,0 +1,11 @@
+id: example
+namespace: concurrency
+
+concurrency:
+  limit: 2
+
+tasks:
+  - id: log_message
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - sleep 10
