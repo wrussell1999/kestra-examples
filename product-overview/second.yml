@@ -94,6 +94,16 @@ tasks:
         subject: "New data available for {{ outputs.upload.file.name }} - {{ outputs.upload.file.createdTime}}"
         htmlTextContent: "<a href='https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}'>Open Google Sheet</a>"
 
+errors:
+  - id: alert_on_failure
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "channel": "#alerts",
+        "text": "Failure alert for flow {{ flow.namespace }}.{{ flow.id }} with ID {{ execution.id }}"
+      }
+
 triggers:
   - id: schedule
     type: io.kestra.plugin.core.trigger.Schedule
