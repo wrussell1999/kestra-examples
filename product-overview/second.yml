@@ -1,4 +1,4 @@
-id: product_data_summary
+id: product_data
 namespace: company.team
 
 inputs:
@@ -66,10 +66,7 @@ tasks:
     parents:
       - "1a2sg__7gizUTgGmezbfh0XtwNndaCOxf"
     mimeType: "application/vnd.google-apps.spreadsheet"
-    serviceAccount: |
-      { 
-        "ENTER": "HERE" 
-      }
+    serviceAccount: "{{ secret('GOOGLE_SA') }}"
 
   - id: approval
     type: io.kestra.plugin.core.flow.Pause
@@ -81,12 +78,12 @@ tasks:
   
   - id: check_approval
     type: io.kestra.plugin.core.flow.If
-    condition: "{{ inputs.approved == 'true' }}"
+    condition: "{{ outputs.approval.onResume.approved }}"
     then:
       - id: notify
         type: io.kestra.plugin.notifications.mail.MailSend
         from: test@example.com
-        to: "{{ inputs.recipient_emaol }}"
+        to: "{{ inputs.recipient_email }}"
         username: "{{ secret('G_EMAIL') }}"
         password: "{{ secret('G_APP_PASSWORD') }}"
         host: smtp.gmail.com
