@@ -1,4 +1,4 @@
-id: parallel_data
+id: process_data_parallel
 namespace: company.team
 
 inputs:

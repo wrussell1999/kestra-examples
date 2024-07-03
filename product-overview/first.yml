@@ -1,4 +1,4 @@
-id: csv_to_sheet
+id: csv_to_gsheet
 namespace: company.team
 
 tasks:
@@ -14,16 +14,13 @@ tasks:
     parents:
       - "1a2sg__7gizUTgGmezbfh0XtwNndaCOxf"
     mimeType: "application/vnd.google-apps.spreadsheet"
-    serviceAccount: |
-      { 
-        "ENTER": "HERE" 
-      }
+    serviceAccount: "{{ secret('GOOGLE_SA') }}"
 
   - id: notify
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
     url: "{{ secret('SLACK_WEBHOOK') }}"
     payload: |
       {
-        "channel": "#general",
+        "channel": "#flow-test",
         "text": "New data available:  https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}"
       }

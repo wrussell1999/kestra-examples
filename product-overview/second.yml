@@ -75,7 +75,7 @@ tasks:
         description: Approve the request?
         type: BOOLEAN
         defaults: true
-  
+
   - id: check_approval
     type: io.kestra.plugin.core.flow.If
     condition: "{{ outputs.approval.onResume.approved }}"
