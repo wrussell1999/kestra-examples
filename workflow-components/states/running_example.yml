@@ -1,0 +1,8 @@
+id: running_example
+namespace: company.team
+
+tasks:
+  - id: log_message
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - sleep 10

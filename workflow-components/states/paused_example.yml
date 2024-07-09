@@ -1,0 +1,10 @@
+id: paused_example
+namespace: company.team
+
+tasks:
+  - id: pause
+    type: io.kestra.plugin.core.flow.Pause
+    
+  - id: log
+    type: io.kestra.plugin.core.log.Log
+    message: "This flow was resumed."

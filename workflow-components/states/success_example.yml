@@ -1,0 +1,7 @@
+id: success_example
+namespace: company.team
+
+tasks:
+  - id: log_message
+    type: io.kestra.plugin.core.log.Log
+    message: "hello, world"

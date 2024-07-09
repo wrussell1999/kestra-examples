@@ -1,0 +1,16 @@
+id: retried_example
+namespace: company.team
+
+retry:
+  type: constant
+  behavior: CREATE_NEW_EXECUTION
+  interval: PT1S
+  maxAttempt: 2
+
+tasks:
+  - id: exit
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - exit 1

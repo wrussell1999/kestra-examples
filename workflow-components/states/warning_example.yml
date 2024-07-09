@@ -1,0 +1,15 @@
+id: warning_example
+namespace: company.team
+
+tasks:
+  - id: allow_failure
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    allowFailure: true
+    commands:
+      - exit 1
+
+  - id: print_status
+    type: io.kestra.plugin.core.log.Log
+    message: "hello, world"

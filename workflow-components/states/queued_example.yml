@@ -1,0 +1,14 @@
+id: queued_example
+namespace: company.team
+
+concurrency:
+  behavior: QUEUE
+  limit: 1
+
+tasks:
+  - id: wait
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - sleep 10
