@@ -14,4 +14,3 @@ tasks:
       type: io.kestra.plugin.core.runner.Process
     commands:
       - exit 1
-  
