@@ -1,5 +1,5 @@
 id: retrying_example
-namespace: company.myteam
+namespace: company.team
 
 retry:
   type: constant
