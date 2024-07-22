@@ -1,0 +1,31 @@
+id: hello_world
+namespace: company.team
+description: Hello World
+
+inputs:
+  - id: user
+    type: STRING
+    defaults: Rick Astley
+
+tasks:
+  - id: first_task
+    type: io.kestra.plugin.core.debug.Return
+    format: thrilled
+
+  - id: second_task
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - sleep 0.42
+      - echo '::{"outputs":{"returned_data":"mydata"}}::'
+
+  - id: hello_world
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      Welcome to Kestra, {{ inputs.user }}! 
+      We are {{ outputs.first_task.value}} to have You here!
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    disabled: true
+    cron: "0 9 * * *"

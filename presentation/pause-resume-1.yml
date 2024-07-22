@@ -1,0 +1,10 @@
+id: pause_resume
+namespace: company.team
+
+tasks:
+  - id: pause
+    type: io.kestra.plugin.core.flow.Pause
+
+  - id: after_pause
+    type: io.kestra.plugin.core.log.Log
+    message: Execution has been resumed!

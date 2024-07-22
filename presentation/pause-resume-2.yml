@@ -1,0 +1,52 @@
+id: vacation_approval_process
+namespace: company.team
+
+inputs:
+  - id: request.name
+    type: STRING
+    defaults: Rick Astley
+
+  - id: request.start_date
+    type: DATE
+    defaults: 2024-07-01
+
+  - id: request.end_date
+    type: DATE
+    defaults: 2024-07-07
+
+  - id: slack_webhook_uri
+    type: URI
+    defaults: https://reqres.in/api/slack
+
+tasks:
+  - id: sendApprovalRequest
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ inputs.slack_webhook_uri }}"
+    payload: |
+      {
+        "channel": "#vacation",
+        "text": "Validate holiday request for {{ inputs.request.name }}. To approve the request, click on the `Resume` button here http://localhost:28080/ui/executions/{{flow.namespace}}/{{flow.id}}/{{execution.id}}"
+      }
+
+  - id: waitForApproval
+    type: io.kestra.plugin.core.flow.Pause
+    onResume:
+      - id: approved
+        description: Approve the request?
+        type: BOOLEAN
+        defaults: true
+      - id: reason
+        description: Reason for approval or rejection?
+        type: STRING
+        defaults: Approved
+
+  - id: approve
+    type: io.kestra.plugin.core.http.Request
+    uri: https://reqres.in/api/products
+    method: POST
+    contentType: application/json
+    body: "{{ inputs.request }}"
+
+  - id: log
+    type: io.kestra.plugin.core.log.Log
+    message: Status is {{ outputs.waitForApproval.onResume.reason }}. Process finished with {{ outputs.approve.body }}
