@@ -1,0 +1,48 @@
+id: myflow
+namespace: company.team
+
+tasks:
+  - id: query
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: set_kv
+    type: io.kestra.plugin.core.kv.Set
+    key: my_key
+    value: "{{ outputs.query.uri }}"
+    namespace: company.team # the current namespace of the flow can be used by default
+    overwrite: true # whether to overwrite or fail if a value for that key already exists; default true
+    ttl: P30D # optional TTL
+
+  - id: log_key
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ kv('my_key') }}"
+
+  - id: get_value_by_key
+    type: io.kestra.plugin.core.kv.Get
+    key: my_key
+    namespace: company.team # the current namespace of the flow can be used by default
+    errorOnMissing: false # bool
+
+  - id: log_key_get
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.get_value_by_key.value }}"
+
+  - id: get_keys_by_prefix
+    type: io.kestra.plugin.core.kv.GetKeys
+    prefix: "my"
+    namespace: company.team # the current namespace of the flow can be used by default
+
+  - id: log_key_prefix
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.get_keys_by_prefix.keys }}"
+
+  - id: delete_kv_pair
+    type: io.kestra.plugin.core.kv.Delete
+    key: my_key
+    namespace: company.team # the current namespace of the flow can be used by default
+    errorOnMissing: false 
+
+  - id: log_kv_deleted
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.delete_kv_pair.deleted }}"
