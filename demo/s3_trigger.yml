@@ -1,0 +1,29 @@
+id: s3_trigger
+namespace: company.team
+
+tasks:
+  - id: process_file
+    type: io.kestra.plugin.scripts.shell.Commands
+    inputFiles:
+      file.txt: "{{ trigger.objects[0].uri }}"
+    commands:
+      - "ls"
+
+  - id: send_alert
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": "File: {{ read(trigger.objects[0].uri) }}"
+      }
+
+triggers:
+  - id: watch_for_files
+    type: io.kestra.plugin.aws.s3.Trigger
+    interval: "PT1S"
+    accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
+    region: "eu-west-2"
+    bucket: "s3-trigger-example"
+    action: DELETE
+    maxKeys: 1
