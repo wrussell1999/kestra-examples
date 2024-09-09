@@ -1,6 +1,11 @@
 id: s3_trigger
 namespace: company.team
 
+variables:
+  source_prefix: inbox
+  destination_prefix: archive
+  bucket: s3-trigger-example
+
 tasks:
   - id: process_file
     type: io.kestra.plugin.scripts.shell.Commands
@@ -18,12 +23,15 @@ tasks:
       }
 
 triggers:
-  - id: watch_for_files
+  - id: watch
     type: io.kestra.plugin.aws.s3.Trigger
     interval: "PT1S"
     accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
     secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
     region: "eu-west-2"
-    bucket: "s3-trigger-example"
-    action: DELETE
+    bucket: "{{ vars.bucket }}"
+    action: MOVE
+    moveTo:
+      key: "{{ vars.destination_prefix }}/{{ vars.source_prefix }}"
+      bucket: "{{ vars.bucket }}"
     maxKeys: 1
