@@ -2,8 +2,6 @@ id: data_process
 namespace: company.team
 
 variables:
-  source_prefix: inbox
-  destination_prefix: archive
   bucket: s3-trigger-example
 
 tasks:
@@ -33,18 +31,14 @@ tasks:
         "text": "Data has been processed. View the output here: http://localhost:8086/ui/executions/{{ flow.namespace }}/{{ flow.id }}/{{ execution.id }}/outputs"
       }
 
-
 triggers:
   - id: watch
     type: io.kestra.plugin.aws.s3.Trigger
-    interval: "PT2S"
+    interval: "PT1S"
     accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
     secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
     region: "eu-west-2"
     bucket: "{{ vars.bucket }}"
-    action: MOVE
+    action: DELETE
     filter: FILES
     maxKeys: 1
-    moveTo:
-      key: "{{ vars.destination_prefix }}/{{ vars.source_prefix }}"
-      bucket: "{{ vars.bucket }}"
