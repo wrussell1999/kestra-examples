@@ -1,4 +1,4 @@
-id: s3_trigger
+id: data_process
 namespace: company.team
 
 variables:
@@ -7,31 +7,44 @@ variables:
   bucket: s3-trigger-example
 
 tasks:
-  - id: process_file
-    type: io.kestra.plugin.scripts.shell.Commands
-    inputFiles:
-      file.txt: "{{ trigger.objects[0].uri }}"
-    commands:
-      - "ls"
+  - id: log_trigger
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ read(trigger.objects[0].uri) }}"
 
+  - id: process_data
+    type: io.kestra.plugin.scripts.python.Commands
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    containerImage: ghcr.io/kestra-io/kestrapy:latest
+    namespaceFiles:
+      enabled: true
+    inputFiles:
+      input.csv: "{{ read(trigger.objects[0].uri) }}"
+    outputFiles:
+      - data.csv
+    commands:
+      - python process_data.py
+    
   - id: send_alert
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
     url: "{{ secret('SLACK_WEBHOOK') }}"
     payload: |
       {
-        "text": "File: {{ read(trigger.objects[0].uri) }}"
+        "text": "Data has been processed. View the output here: http://localhost:8086/ui/executions/{{ flow.namespace }}/{{ flow.id }}/{{ execution.id }}/outputs"
       }
+
 
 triggers:
   - id: watch
     type: io.kestra.plugin.aws.s3.Trigger
-    interval: "PT1S"
+    interval: "PT2S"
     accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
     secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
     region: "eu-west-2"
     bucket: "{{ vars.bucket }}"
     action: MOVE
+    filter: FILES
+    maxKeys: 1
     moveTo:
       key: "{{ vars.destination_prefix }}/{{ vars.source_prefix }}"
       bucket: "{{ vars.bucket }}"
-    maxKeys: 1
