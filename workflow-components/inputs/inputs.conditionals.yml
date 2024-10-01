@@ -1,0 +1,34 @@
+id: cloud_resources_request
+namespace: company.team
+
+inputs:
+  - id: cloud_provider
+    displayName: Cloud Provider
+    type: SELECT
+    values:
+      - AWS
+      - GCP
+      - Azure
+
+  - id: cloud_vms
+    displayName: Cloud VM
+    type: SELECT
+    expression: "{{ kv('cloud_vms')[inputs.cloud_provider] }}"
+    allowCustomValue: true
+    dependsOn:
+      inputs:
+        - cloud_provider
+
+  - id: region
+    displayName: Cloud Region
+    type: SELECT
+    expression: "{{ kv('cloud_regions')[inputs.cloud_provider] }}"
+    dependsOn:
+      inputs:
+        - cloud_provider
+        - cloud_vms
+
+tasks:
+  - id: log_inputs
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ inputs.cloud_provider }} {{ inputs.cloud_vms }} {{ inputs.region }}"
