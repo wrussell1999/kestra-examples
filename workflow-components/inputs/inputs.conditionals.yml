@@ -1,15 +1,16 @@
-id: cloud_resources_request
+id: conditional_inputs
 namespace: company.team
 
 inputs:
   - id: cloud_provider
-    displayName: Cloud Provider
+    displayName: Cloud Platform
     type: SELECT
-    values:
+    required: true
+    values: 
       - AWS
       - GCP
       - Azure
-
+  
   - id: cloud_vms
     displayName: Cloud VM
     type: SELECT
@@ -18,7 +19,7 @@ inputs:
     dependsOn:
       inputs:
         - cloud_provider
-
+    
   - id: region
     displayName: Cloud Region
     type: SELECT
@@ -29,6 +30,6 @@ inputs:
         - cloud_vms
 
 tasks:
-  - id: log_inputs
+  - id: log_resources
     type: io.kestra.plugin.core.log.Log
-    message: "{{ inputs.cloud_provider }} {{ inputs.cloud_vms }} {{ inputs.region }}"
+    message: "Platform: {{ inputs.cloud_provider }}. VM Type: {{ inputs.cloud_vms }} Region: {{ inputs.region }}"
