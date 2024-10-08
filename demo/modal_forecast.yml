@@ -1,0 +1,172 @@
+id: modal_forecast
+namespace: company.team
+
+inputs:
+  - id: s3_bucket
+    displayName: S3 Bucket name
+    description: Name of the S3 bucket to upload files
+    type: STRING
+    defaults: kestra-us
+
+  - id: run_modal
+    displayName: Run forecasts on Modal
+    description: Whether to run the forecast on Modal
+    type: BOOLEAN
+    defaults: true
+
+  - id: dataset_url
+    displayName: Data lake URL to forecast data
+    description: Data used for forecasting - swap `jaffle-parquet` with `jaffle-large` for a more accurate forecast
+    type: STRING
+    defaults: "https://huggingface.co/datasets/kestra/datasets/resolve/main/jaffle-parquet/raw_orders.parquet"
+    dependsOn:
+      inputs:
+        - run_modal
+      condition: "{{ inputs.run_modal equals true }}"
+
+  - id: cpu
+    type: SELECT
+    displayName: CPU
+    description: Number of CPUs to allocate
+    defaults: "4.0"
+    values: ["0.25", "0.5", "0.75", "1.0", "1.5", "2.0", "4.0", "8.0", "16.0", "32.0"]
+    dependsOn:
+      inputs:
+        - run_modal
+      condition: "{{ inputs.run_modal equals true }}"
+
+  - id: memory
+    type: SELECT
+    displayName: Memory
+    description: Amount of memory in MB
+    defaults: 8192
+    values: ["512", "1024", "2048", "4096", "8192", "16384", "32768"]
+    dependsOn:
+      inputs:
+        - run_modal
+      condition: "{{ inputs.run_modal }}"
+
+  - id: customize_forecast
+    displayName: Customize Forecast Parameters
+    description: Whether to customize the visualization and file names
+    type: BOOLEAN
+    defaults: false
+
+  - id: forecast_file
+    displayName: Forecast file name to be stored in GCS
+    description: Name of the forecast output file
+    type: STRING
+    defaults: forecast.parquet
+    dependsOn:
+      inputs:
+        - run_modal
+        - customize_forecast
+      condition: "{{ inputs.run_modal equals true and inputs.customize_forecast equals true }}"
+
+  - id: html_report
+    displayName: HTML report file name to be stored in GCS
+    description: Name of the HTML report file
+    type: STRING
+    defaults: forecast.html
+    dependsOn:
+      inputs:
+        - run_modal
+        - customize_forecast
+      condition: "{{ inputs.run_modal equals true and inputs.customize_forecast equals true }}"
+
+  - id: color_history
+    displayName: Time series color for historical data
+    description: Color for historical data in the plot
+    type: STRING
+    defaults: blue
+    dependsOn:
+      inputs:
+        - run_modal
+        - customize_forecast
+      condition: "{{ inputs.run_modal equals true and inputs.customize_forecast equals true }}"
+
+  - id: color_prediction
+    displayName: Time series color for forecasted data
+    description: Color for predicted data in the plot
+    type: STRING
+    defaults: red
+    dependsOn:
+      inputs:
+        - run_modal
+        - customize_forecast
+      condition: "{{ inputs.run_modal equals true and inputs.customize_forecast equals true }}"
+
+  - id: nr_days_fcst
+    displayName: Forecast days
+    description: Nr of days in the future to generate forecast for
+    type: INT
+    defaults: 180
+    dependsOn:
+      inputs:
+        - run_modal
+        - customize_forecast
+      condition: "{{ inputs.run_modal equals true and inputs.customize_forecast equals true }}"
+
+tasks:
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ inputs.run_modal equals true }}"
+    then:
+      - id: modal
+        type: io.kestra.plugin.modal.cli.ModalCLI
+        namespaceFiles:
+          enabled: true
+        commands:
+          - modal run script.py --forecast-file {{inputs.forecast_file}} --html-report {{inputs.html_report}} --s3-bucket {{inputs.s3_bucket}} --nr-days-fcst {{inputs.nr_days_fcst}} --dataset-url {{inputs.dataset_url}} --color-history {{inputs.color_history}} --color-prediction {{inputs.color_prediction}}
+        containerImage: ghcr.io/kestra-io/modal:latest
+        env:
+          MODAL_TOKEN_ID: "{{ kv('MODAL_TOKEN_ID') }}"
+          MODAL_TOKEN_SECRET: "{{ kv('MODAL_TOKEN_SECRET') }}"
+          AWS_ACCESS_KEY_ID: "{{ kv('AWS_ACCESS_KEY_ID') }}"
+          AWS_SECRET_ACCESS_KEY: "{{ kv('AWS_SECRET_ACCESS_KEY') }}"
+          AWS_DEFAULT_REGION: "{{ kv('AWS_DEFAULT_REGION') }}"
+          CPU: "{{ inputs.cpu }}"
+          MEMORY: "{{ inputs.memory }}"
+
+  - id: download_from_s3
+    type: io.kestra.plugin.aws.s3.Download
+    accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ kv('AWS_SECRET_ACCESS_KEY') }}"
+    region: "{{ kv('AWS_DEFAULT_REGION') }}"
+    bucket: "{{ inputs.s3_bucket }}"
+    key: "{{ inputs.html_report }}"
+
+triggers:
+  - id: morning_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 8 * * *"
+    inputs:
+      s3_bucket: kestra-us
+      run_modal: true
+      dataset_url: "https://huggingface.co/datasets/kestra/datasets/resolve/main/jaffle-parquet/raw_orders.parquet"
+      cpu: "4.0"
+      memory: 8192
+      customize_forecast: false
+      forecast_file: "forecast.parquet"
+      html_report: "forecast.html"
+      color_history: "blue"
+      color_prediction: "red"
+      nr_days_fcst: 180
+    disabled: true
+
+  - id: evening_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 21 * * *"
+    inputs:
+      s3_bucket: kestra-us
+      run_modal: true
+      dataset_url: "https://huggingface.co/datasets/kestra/datasets/resolve/main/jaffle-parquet/raw_orders.parquet"
+      cpu: "4.0"
+      memory: 8192
+      customize_forecast: false
+      forecast_file: "forecast.parquet"
+      html_report: "forecast.html"
+      color_history: "blue"
+      color_prediction: "red"
+      nr_days_fcst: 180
+    disabled: true
