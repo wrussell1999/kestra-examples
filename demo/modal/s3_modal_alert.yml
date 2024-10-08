@@ -4,10 +4,10 @@ namespace: company.team
 tasks:
   - id: slack
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
-    url: https://hooks.slack.com/services/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
+    url: "{{ kv('SLACK_WEBHOOK') }}"
     payload: |
         {
-          "text": "New report available! Download it http://localhost:28080/ui/executions/{{flow.namespace}}/{{flow.id}}/{{ execution.id }}."
+          "text": "New report available! Download it http://localhost:8086/ui/executions/{{flow.namespace}}/{{flow.id}}/{{ execution.id }}."
         }
 
 triggers:
