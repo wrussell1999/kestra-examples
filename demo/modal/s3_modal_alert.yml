@@ -1,0 +1,25 @@
+id: s3_modal_alert
+namespace: company.team
+
+tasks:
+  - id: slack
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: https://hooks.slack.com/services/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
+    payload: |
+        {
+          "text": "New report available! Download it http://localhost:28080/ui/executions/{{flow.namespace}}/{{flow.id}}/{{ execution.id }}."
+        }
+
+triggers:
+  - id: s3_trigger
+    type: io.kestra.plugin.aws.s3.Trigger
+    bucket: kestra-us
+    interval: PT1S
+    prefix: forecast.html
+    accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ kv('AWS_SECRET_ACCESS_KEY') }}"
+    region: "{{ kv('AWS_DEFAULT_REGION') }}"    
+    action: MOVE
+    moveTo:
+      key: archive
+      bucket: kestra-us
