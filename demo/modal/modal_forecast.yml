@@ -152,7 +152,6 @@ triggers:
       color_history: "blue"
       color_prediction: "red"
       nr_days_fcst: 180
-    disabled: true
 
   - id: evening_schedule
     type: io.kestra.plugin.core.trigger.Schedule
@@ -169,4 +168,3 @@ triggers:
       color_history: "blue"
       color_prediction: "red"
       nr_days_fcst: 180
-    disabled: true
