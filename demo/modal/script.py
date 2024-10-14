@@ -11,7 +11,7 @@ app = modal.App(
     secrets=[
         modal.Secret.from_local_environ(
             env_keys=[
-                "CPU",
+                "GPU",
                 "MEMORY",
                 "AWS_ACCESS_KEY_ID",
                 "AWS_SECRET_ACCESS_KEY",
@@ -31,7 +31,7 @@ image = modal.Image.debian_slim().pip_install(
 )
 
 
-@app.function(image=image, cpu=float(os.getenv("CPU")), memory=int(os.getenv("MEMORY")))
+@app.function(image=image, gpu=os.getenv("GPU"), memory=int(os.getenv("MEMORY")))
 def predict_order_volume(
     forecast_file: str,
     html_report: str,
