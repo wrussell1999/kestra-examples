@@ -6,7 +6,7 @@ inputs:
     displayName: S3 Bucket name
     description: Name of the S3 bucket to upload files
     type: STRING
-    defaults: kestra-us
+    defaults: kestra-modal-example
 
   - id: run_modal
     displayName: Run forecasts on Modal
@@ -24,12 +24,12 @@ inputs:
         - run_modal
       condition: "{{ inputs.run_modal equals true }}"
 
-  - id: cpu
+  - id: gpu
     type: SELECT
-    displayName: CPU
-    description: Number of CPUs to allocate
-    defaults: "4.0"
-    values: ["0.25", "0.5", "0.75", "1.0", "1.5", "2.0", "4.0", "8.0", "16.0", "32.0"]
+    displayName: GPU request
+    description: The GPU resources to allocate to the job
+    defaults: "any"
+    values: ["any", "t4", "l4", "a100", "h100", "a10g"]
     dependsOn:
       inputs:
         - run_modal
@@ -125,7 +125,7 @@ tasks:
           AWS_ACCESS_KEY_ID: "{{ kv('AWS_ACCESS_KEY_ID') }}"
           AWS_SECRET_ACCESS_KEY: "{{ kv('AWS_SECRET_ACCESS_KEY') }}"
           AWS_DEFAULT_REGION: "{{ kv('AWS_DEFAULT_REGION') }}"
-          CPU: "{{ inputs.cpu }}"
+          GPU: "{{ inputs.gpu }}"
           MEMORY: "{{ inputs.memory }}"
 
   - id: download_from_s3
@@ -144,7 +144,7 @@ triggers:
       s3_bucket: kestra-us
       run_modal: true
       dataset_url: "https://huggingface.co/datasets/kestra/datasets/resolve/main/jaffle-parquet/raw_orders.parquet"
-      cpu: "4.0"
+      gpu: "a100"
       memory: 8192
       customize_forecast: false
       forecast_file: "forecast.parquet"
@@ -152,6 +152,7 @@ triggers:
       color_history: "blue"
       color_prediction: "red"
       nr_days_fcst: 180
+    disabled: true
 
   - id: evening_schedule
     type: io.kestra.plugin.core.trigger.Schedule
@@ -160,7 +161,7 @@ triggers:
       s3_bucket: kestra-us
       run_modal: true
       dataset_url: "https://huggingface.co/datasets/kestra/datasets/resolve/main/jaffle-parquet/raw_orders.parquet"
-      cpu: "4.0"
+      gpu: "a100"
       memory: 8192
       customize_forecast: false
       forecast_file: "forecast.parquet"
@@ -168,3 +169,4 @@ triggers:
       color_history: "blue"
       color_prediction: "red"
       nr_days_fcst: 180
+    disabled: true
