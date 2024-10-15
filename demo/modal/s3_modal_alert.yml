@@ -1,4 +1,4 @@
-id: s3_modal_alert
+id: modal_s3_alert
 namespace: company.team
 
 tasks:
@@ -13,7 +13,7 @@ tasks:
 triggers:
   - id: s3_trigger
     type: io.kestra.plugin.aws.s3.Trigger
-    bucket: kestra-us
+    bucket: kestra-modal-example
     interval: PT1S
     prefix: forecast.html
     accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
@@ -22,4 +22,4 @@ triggers:
     action: MOVE
     moveTo:
       key: archive
-      bucket: kestra-us
+      bucket: kestra-modal-example
