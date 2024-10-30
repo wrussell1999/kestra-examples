@@ -1,0 +1,55 @@
+id: pr_check
+namespace: system
+
+inputs:
+  - id: server
+    type: STRING
+    defaults: http://host.docker.internal:8084
+  
+  - id: directory
+    type: STRING
+    defaults: ./kestra/flows
+
+  - id: resource
+    type: SELECT
+    values:
+      - flow
+      - template
+    defaults: flow
+  
+  - id: github_repo
+    type: STRING
+    defaults: https://github.com/wrussell1999/kestra-gh-action-example
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: "{{ inputs.github_repo }}"
+        branch: "{{ trigger.body.pull_request.head.ref }}"
+
+      - id: validate
+        type: io.kestra.plugin.scripts.shell.Commands
+        allowFailure: true
+        containerImage: kestra/kestra:latest
+        commands:
+          - /app/kestra {{ inputs.resource }} validate {{ inputs.directory }} --server {{ inputs.server }}
+  
+  - id: check
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ outputs.validate.exitCode equals 0 }}"
+    then:
+      - id: success
+        type: io.kestra.plugin.core.log.Log
+        message: "Flow Valid"
+    else:
+      - id: fail
+        type: io.kestra.plugin.core.log.Log
+        message: "Flow Invalid"
+
+triggers:
+  - id: gh_webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abcdefg
