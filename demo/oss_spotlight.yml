@@ -7,6 +7,8 @@ tasks:
     containerImage: ghcr.io/kestra-io/pydata:latest
     beforeCommands:
       - pip install kestra
+    outputFiles:
+      - processed_orders.csv
     script: |
       import pandas as pd
       from kestra import Kestra
@@ -18,8 +20,6 @@ tasks:
       df.to_csv('processed_orders.csv')
 
       Kestra.outputs({"total": total_revenue})
-    outputFiles:
-      - processed_orders.csv
 
   - id: log_output
     type: io.kestra.plugin.core.log.Log
