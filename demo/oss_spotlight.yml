@@ -24,6 +24,14 @@ tasks:
     type: io.kestra.plugin.core.log.Log
     message: "Total: ${{ outputs.code.vars.total }}"
 
+  - id: slack_output
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ kv('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": "Total: ${{ outputs.code.vars.total }}"
+      }
+
   - id: s3_upload
     type: io.kestra.plugin.aws.s3.Upload
     region: eu-west-2
