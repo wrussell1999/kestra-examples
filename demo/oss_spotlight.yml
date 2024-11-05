@@ -4,7 +4,16 @@ namespace: company.team
 inputs:
   - id: dataset_uri
     type: STRING
+    displayName: Dataset URI
     defaults: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: discount_amount
+    type: FLOAT
+    displayName: Discount Amount
+    description: By default, it's set to 0 (no discount).
+    min: 0
+    max: 1
+    defaults: 0
 
 tasks:
   - id: code
@@ -21,13 +30,9 @@ tasks:
       df = pd.read_csv('{{ inputs.dataset_uri }}')
       total_revenue = df['total'].sum()
       Kestra.outputs({"total": total_revenue})
-
-      df['discounted_total'] = df['total'] * 0.9
-      df.to_csv('processed_orders.csv')
-
-  - id: log_output
-    type: io.kestra.plugin.core.log.Log
-    message: "Total: ${{ outputs.code.vars.total }}"
+      if {{ inputs.discount_amount }} > 0:
+        df['discounted_total'] = df['total'] * (1 - {{ inputs.discount_amount }})
+        df.to_csv('processed_orders.csv')
 
   - id: slack_message
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
@@ -37,15 +42,19 @@ tasks:
         "text": "Total: ${{ outputs.code.vars.total }}"
       }
 
-  - id: s3_upload
-    type: io.kestra.plugin.aws.s3.Upload
-    region: eu-west-2
-    bucket: oss-example
-    key: "processed_orders.csv"
-    from: "{{ outputs.code.outputFiles['processed_orders.csv']}}"
-    accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
-    secretKeyId: "{{ kv('AWS_SECRET_KEY_ID') }}"
-    
+  - id: if_file
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ inputs.discount_amount > 0 }}"
+    then:
+      - id: s3_upload_discounts
+        type: io.kestra.plugin.aws.s3.Upload
+        region: eu-west-2
+        bucket: oss-example
+        key: "processed_orders.csv"
+        from: "{{ outputs.code.outputFiles['processed_orders.csv']}}"
+        accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
+        secretKeyId: "{{ kv('AWS_SECRET_KEY_ID') }}"
+
 errors:
   - id: slack_notification
     type: io.kestra.plugin.notifications.slack.SlackExecution
