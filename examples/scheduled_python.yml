@@ -1,0 +1,28 @@
+id: scheduled_python
+namespace: company.team
+
+inputs:
+  - id: uri
+    type: URI
+    defaults: https://www.google.com/
+
+tasks:
+  - id: inline_script
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    containerImage: ghcr.io/kestra-io/pydata:latest
+    script: |
+      import requests
+      from kestra import Kestra 
+
+      url = "{{ inputs.uri }}"
+      response = requests.get(url)
+
+      Kestra.outputs({"status_code": response.status_code})
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 10 * * *"
+    description: Run everyday at 10am

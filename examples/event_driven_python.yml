@@ -1,0 +1,37 @@
+id: event_driven_python
+namespace: company.team
+
+variables:
+  bucket: s3-bucket
+  region: eu-west-2
+
+tasks:
+  - id: process_data
+    type: io.kestra.plugin.scripts.python.Commands
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    containerImage: ghcr.io/kestra-io/kestrapy:latest
+    namespaceFiles:
+      enabled: true
+    inputFiles:
+      input.csv: "{{ read(trigger.objects[0].uri) }}"
+    outputFiles:
+      - data.csv
+    commands:
+      - python process_data.py
+    
+  - id: log_trigger
+    type: io.kestra.plugin.core.log.Log
+    message: "Data has been processed. View the output here: http://localhost:8086/ui/executions/{{ flow.namespace }}/{{ flow.id }}/{{ execution.id }}/outputs"
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.aws.s3.Trigger
+    interval: "PT1S"
+    accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ kv('AWS_SECRET_KEY_ID') }}"
+    region: eu-west-2
+    bucket: "{{ vars.bucket }}"
+    action: DELETE
+    filter: FILES
+    maxKeys: 1
