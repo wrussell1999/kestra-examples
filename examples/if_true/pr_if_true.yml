@@ -1,0 +1,68 @@
+id: pr_if_true
+namespace: system
+
+inputs:
+  - id: flows
+    type: BOOLEAN
+    defaults: true
+
+  - id: namespace_files
+    type: BOOLEAN
+    defaults: true
+
+  - id: pr
+    type: BOOLEAN
+    defaults: false
+    dependsOn:
+      inputs:
+        - flows
+        - namespace_files
+      condition: "{{ inputs.flows == true or inputs.namespace_files == true}}"
+
+variables:
+  gh_username: wrussell1999
+  gh_repo: https://github.com/wrussell1999/dev-to-prod
+
+tasks:
+  - id: push_flows
+    type: io.kestra.plugin.git.PushFlows
+    sourceNamespace: company.team
+    targetNamespace: company.engineering
+    flows: "*"
+    includeChildNamespaces: true
+    gitDirectory: _flows
+    url: "{{ vars.gh_repo }}"
+    username: "{{ vars.gh_username }}"
+    password: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+    branch: develop
+    commitMessage: add flows {{ now() }}
+
+  - id: push_namespace_files
+    type: io.kestra.plugin.git.PushNamespaceFiles
+    namespace: company.team
+    files: "*"
+    gitDirectory: _files
+    url: "{{ vars.gh_repo }}"
+    username: "{{ vars.gh_username }}"
+    password: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+    branch: develop
+    commitMessage: add namespace files {{ now() }}
+    
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ inputs.pr == true }}"
+    then:
+      - id: create_pr
+        type: io.kestra.plugin.github.pulls.Create
+        oauthToken: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+        repository: wrussell1999/dev-to-prod
+        sourceBranch: develop
+        targetBranch: main
+        title: Merge develop to main
+        body: "Request to merge changes from develop into main"
+
+triggers:
+  - id: schedule_push
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 17 * * *" # release/push to Git every day at 5pm
+    disabled: true
