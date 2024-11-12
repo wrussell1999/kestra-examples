@@ -1,0 +1,64 @@
+id: upload_if_true
+namespace: company.team
+
+inputs:
+
+  - id: outputs
+    type: BOOLEAN
+    defaults: true
+    displayName: Generate Outputs
+
+  - id: csv
+    type: BOOLEAN
+    defaults: false
+    displayName: Export CSV 
+
+  - id: upload
+    type: BOOLEAN
+    defaults: false
+    displayName: Upload to S3
+    dependsOn:
+      inputs:
+        - csv
+      condition: "{{ inputs.csv == true }}"
+
+tasks:
+  - id: code
+    type: io.kestra.plugin.scripts.python.Script
+    containerImage: ghcr.io/kestra-io/pydata:latest
+    beforeCommands:
+      - pip install kestra
+    outputFiles:
+      - processed_orders.csv
+    script: |
+      from kestra import Kestra
+      import pandas as pd
+
+      df = pd.read_csv('https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv')
+      df['order_category'] = pd.cut(df['total'],
+                                    bins=[0, 50, 150, float('inf')],
+                                    labels=['Small', 'Medium', 'Large'])
+      if '{{ inputs.outputs }}' == 'true':
+        category_counts = df['order_category'].value_counts()
+        outputs = {
+                    "Small": int(category_counts.get('Small', 0)), 
+                    "Medium": int(category_counts.get('Medium', 0)),
+                    "Large": int(category_counts.get('Large', 0))
+                  }
+        Kestra.outputs(outputs)
+
+      if '{{ inputs.csv }}' == 'true':
+        df.to_csv('processed_orders.csv')
+
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ inputs.upload == true }}"
+    then:
+      - id: s3_upload_discounts
+        type: io.kestra.plugin.aws.s3.Upload
+        region: eu-west-2
+        bucket: oss-example
+        key: "processed_orders.csv"
+        from: "{{ outputs.code.outputFiles['processed_orders.csv']}}"
+        accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+        secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
