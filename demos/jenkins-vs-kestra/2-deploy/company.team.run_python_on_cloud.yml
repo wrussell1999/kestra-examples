@@ -32,7 +32,5 @@ tasks:
           taskRoleArn: "{{ task_role_arn }}"
         inputFiles:
           example.py: "{{ workingDir }}/demos/jenkins-vs-kestra/2-deploy/example.py"
-        beforeCommands:
-          - pip install pandas
         commands:
           - python example.py
