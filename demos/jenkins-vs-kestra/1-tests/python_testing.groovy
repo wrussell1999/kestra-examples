@@ -12,12 +12,13 @@ pipeline {
         }
         stage('dependencies') {
             steps {
-                sh 'python3 -m pip install --user pytest'
+                sh 'python3 -m venv .venv'
+                sh '. .venv/bin/activate && pip install pytest'
             }
         }
         stage('tests') {
             steps {
-                sh 'pytest demos/jenkins-vs-kestra/1-tests'
+                sh '. .venv/bin/activate && pytest demos/jenkins-vs-kestra/1-tests'
             }
         }
     }
