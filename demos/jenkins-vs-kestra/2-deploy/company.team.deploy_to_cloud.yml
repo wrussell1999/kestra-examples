@@ -1,0 +1,12 @@
+id: deploy_to_cloud
+namespace: company.team
+
+tasks:
+  - id: workingdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/wrussell1999/kestra-examples
+        branch: main
+

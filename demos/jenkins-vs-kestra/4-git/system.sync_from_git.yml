@@ -1,0 +1,33 @@
+id: sync_from_git
+namespace: system
+
+variables:
+  gh_username: wrussell1999
+  gh_repo: https://github.com/wrussell1999/dev-to-prod
+
+tasks:
+  - id: sync_flows
+    type: io.kestra.plugin.git.SyncFlows
+    gitDirectory: _flows
+    targetNamespace: company.engineering
+    includeChildNamespaces: true
+    delete: true
+    url: "{{ vars.gh_repo }}"
+    branch: main
+    username: "{{ vars.gh_username }}"
+    password: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+
+  - id: sync_namespace_files
+    type: io.kestra.plugin.git.SyncNamespaceFiles
+    namespace: company.engineering
+    gitDirectory: _files
+    delete: true
+    url: "{{ vars.gh_repo }}"
+    branch: main
+    username: "{{ vars.gh_username }}"
+    password: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+
+triggers:
+  - id: on_push
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abcdefg

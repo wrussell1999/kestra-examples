@@ -1,0 +1,20 @@
+id: python_testing
+namespace: company.team
+
+tasks:
+  - id: workingdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/wrussell1999/kestra-examples
+        branch: main
+
+      - id: run_test
+        type: io.kestra.plugin.scripts.python.Commands
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        beforeCommands:
+          - pip install pytest
+        commands:
+          - pytest demos/jenkins-vs-kestra/1-tests/tests
