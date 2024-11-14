@@ -1,0 +1,38 @@
+id: run_python_on_cloud
+namespace: company.team
+
+variables:
+  region: eu-west-2
+  bucket: kestra-example
+  compute_env_arn: "arn:aws:batch:eu-central-1:123456789012:compute-environment/kestraFargateEnvironment"
+  job_queue_arn: "arn:aws:batch:eu-central-1:123456789012:job-queue/kestraJobQueue"
+  execution_role_arn: "arn:aws:iam::123456789012:role/kestraEcsTaskExecutionRole"
+  task_role_arn: "arn:aws:iam::123456789012:role/ecsTaskRole"
+
+tasks:
+  - id: workingdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/wrussell1999/kestra-examples
+        branch: main
+
+      - id: run_code
+        type: io.kestra.plugin.scripts.python.Commands
+        taskRunner:
+          type: io.kestra.plugin.ee.aws.runner.Batch
+          accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID')}}"
+          secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
+          region: "{{ vars.region }}"
+          bucket: "{{ vars.bucket }}"
+          computeEnvironmentArn: "{{ vars.compute_env_arn }}"
+          jobQueueArn: "{{ vars.job_queue_arn }}"
+          executionRoleArn: "{{ vars.execution_role_arn }}"
+          taskRoleArn: "{{ task_role_arn }}"
+        inputFiles:
+          example.py: "{{ workingDir }}/demos/jenkins-vs-kestra/2-deploy/example.py"
+        beforeCommands:
+          - pip install pandas
+        commands:
+          - python example.py
