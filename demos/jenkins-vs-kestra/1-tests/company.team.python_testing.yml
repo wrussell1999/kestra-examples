@@ -17,4 +17,8 @@ tasks:
         beforeCommands:
           - pip install pytest
         commands:
-          - pytest demos/jenkins-vs-kestra/1-tests/tests
+          - pytest demos/jenkins-vs-kestra/1-tests
+
+  - id: slack
+    type: io.kestra.plugin.notifications.slack.SlackExecution
+    url: "{{ secret('SLACK_WEBHOOK') }}"
