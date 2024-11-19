@@ -9,4 +9,12 @@ tasks:
         type: io.kestra.plugin.git.Clone
         url: https://github.com/wrussell1999/kestra-examples
         branch: main
-
+      
+      - id: run_code
+        type: io.kestra.plugin.scripts.python.Commands
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        inputFiles:
+          example.py: "{{ workingDir }}/demos/jenkins-vs-kestra/2-deploy/example.py"
+        commands:
+          - python example.py
