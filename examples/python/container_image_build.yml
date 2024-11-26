@@ -1,0 +1,26 @@
+id: container_image_build
+namespace: company.team
+
+tasks:
+  - id: build
+    type: io.kestra.plugin.docker.Build
+    dockerfile: |
+      FROM python:3.10
+      RUN pip install --upgrade pip
+      RUN pip install --no-cache-dir kestra pandas
+    tags:
+      - python_image
+
+  - id: code
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      pullPolicy: NEVER
+    containerImage: "{{ outputs.build.imageId }}"
+    script: |
+      import pandas as pd
+      from kestra import Kestra
+
+      df = pd.read_csv('https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv')
+      total_revenue = df['total'].sum()
+      Kestra.outputs({"total": total_revenue})

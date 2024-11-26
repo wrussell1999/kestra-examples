@@ -1,0 +1,15 @@
+id: before_commands
+namespace: company.team
+
+tasks:
+  - id: code
+    type: io.kestra.plugin.scripts.python.Script
+    beforeCommands:
+      - pip install pandas kestra
+    script: |
+      import pandas as pd
+      from kestra import Kestra
+
+      df = pd.read_csv('https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv')
+      total_revenue = df['total'].sum()
+      Kestra.outputs({"total": total_revenue})
