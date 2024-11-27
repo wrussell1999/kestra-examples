@@ -1,0 +1,12 @@
+id: webhook_example
+namespace: company.team
+
+tasks:
+  - id: hello
+    type: io.kestra.plugin.core.log.Log
+    message: "hello"
+
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abcdefg
