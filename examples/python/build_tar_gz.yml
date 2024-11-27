@@ -1,0 +1,30 @@
+id: build_tar_gz
+namespace: company
+
+tasks:
+  - id: sync_code_to_kestra
+    type: io.kestra.plugin.git.SyncNamespaceFiles
+    disabled: true # already synced files
+    namespace: "{{ flow.namespace }}"
+    gitDirectory: .
+    url: https://github.com/anna-geller/python-in-kestra
+    branch: main
+    username: anna-geller
+    password: "{{ kv('GITHUB_ACCESS_TOKEN') }}"
+
+  - id: build
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    beforeCommands:
+      - pip install build
+    commands:
+      - python -m build
+    outputFiles:
+      - "**/*.tar.gz"
+
+  - id: upload
+    type: io.kestra.plugin.core.namespace.UploadFiles
+    namespace: company.sales
+    filesMap:
+      "etl-0.1.0.tar.gz": "{{ outputs.build.outputFiles['dist/etl-0.1.0.tar.gz']}}"

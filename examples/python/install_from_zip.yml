@@ -1,0 +1,21 @@
+id: install_from_zip
+namespace: company.sales
+
+inputs:
+  - id: date
+    type: STRING
+    defaults: 12/24/2024
+    displayName: Delivery Date
+
+tasks:
+  - id: python
+    type: io.kestra.plugin.scripts.python.Script
+    namespaceFiles:
+      enabled: true
+    beforeCommands:
+      - pip install etl-0.1.0.tar.gz
+    script: |
+      import etl.utils as etl
+
+      out = etl.standardize_date_format("{{ inputs.date }}")
+      print(out)
