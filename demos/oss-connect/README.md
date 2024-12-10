@@ -8,7 +8,9 @@ This flow takes 2 inputs:
 - Dataset URL
 - Discount Percentage
 
-These both have default values to them which allow them to
+These both have default values to them which allow them to work without any changes.
+
+The Discount Percentage has validation to ensure people can't enter an invalid number too.
 
 ## Tasks
 
