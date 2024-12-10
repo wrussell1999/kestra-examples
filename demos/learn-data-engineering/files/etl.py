@@ -11,4 +11,4 @@ discount_amount = float(os.environ['DISCOUNT_AMOUNT'])
 
 if discount_amount > 0:
     df['discounted_total'] = df['total'] * (1 - discount_amount)
-    df.to_csv('processed_orders.csv')
+    df.to_csv('processed_orders.csv', index=False)

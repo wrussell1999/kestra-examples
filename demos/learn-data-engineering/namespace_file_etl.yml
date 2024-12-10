@@ -40,13 +40,43 @@ tasks:
         "text": "Total: ${{ outputs.code.vars.total }}"
       }
 
+  - id: bigquery
+    type: io.kestra.plugin.gcp.bigquery.Load
+    runIf: "{{ inputs.discount_amount > 0 }}"
+    from: "{{ outputs.code.outputFiles['processed_orders.csv'] }}"
+    serviceAccount: "{{ secret('GOOGLE_SA') }}"
+    projectId: "kestra-sandbox"
+    destinationTable: "kestra-sandbox.wrussell.python-etl"
+    format: CSV
+    csvOptions:
+      fieldDelimiter: ","
+      skipLeadingRows: 1
+    schema:
+      fields:
+        - name: order_id
+          type: INT64
+        - name: customer_name
+          type: STRING
+        - name: customer_email
+          type: STRING
+        - name: product_id
+          type: INT64
+        - name: price
+          type: FLOAT64
+        - name: quantity
+          type: INT64
+        - name: total
+          type: FLOAT64
+        - name: discounted_total
+          type: FLOAT64
+
   - id: s3_upload_discounts
     type: io.kestra.plugin.aws.s3.Upload
     runIf: "{{ inputs.discount_amount > 0 }}"
     region: eu-west-2
     bucket: oss-example
     key: "processed_orders.csv"
-    from: "{{ outputs.code.outputFiles['processed_orders.csv']}}"
+    from: "{{ outputs.code.outputFiles['processed_orders.csv'] }}"
     accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
     secretKeyId: "{{ kv('AWS_SECRET_KEY_ID') }}"
 
