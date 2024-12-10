@@ -1,4 +1,4 @@
-id: learn_data_engineering
+id: oss_connect
 namespace: company.team
 
 inputs:
@@ -30,6 +30,7 @@ tasks:
       df = pd.read_csv('{{ inputs.dataset_uri }}')
       total_revenue = df['total'].sum()
       Kestra.outputs({"total": total_revenue})
+
       if {{ inputs.discount_amount }} > 0:
         df['discounted_total'] = df['total'] * (1 - {{ inputs.discount_amount }})
         df.to_csv('processed_orders.csv')
