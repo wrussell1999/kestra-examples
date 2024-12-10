@@ -1,0 +1,63 @@
+id: namespace_file_etl
+namespace: company.team
+
+inputs:
+  - id: dataset_uri
+    type: STRING
+    displayName: Dataset URI
+    defaults: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: discount_amount
+    type: FLOAT
+    displayName: Discount Amount
+    description: By default, it's set to 0 (no discount).
+    min: 0
+    max: 1
+    defaults: 0
+
+tasks:
+  - id: code
+    type: io.kestra.plugin.scripts.python.Commands
+    containerImage: ghcr.io/kestra-io/pydata:latest
+    namespaceFiles:
+      enabled: true
+    beforeCommands:
+      - pip install kestra
+    outputFiles:
+      - processed_orders.csv
+    env:
+      DATASET_URI: "{{ inputs.dataset_uri }}"
+      DISCOUNT_AMOUNT: "{{ inputs.discount_amount }}"
+    commands:
+      - python files/etl.py
+
+
+  - id: slack_message
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ kv('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": "Total: ${{ outputs.code.vars.total }}"
+      }
+
+  - id: s3_upload_discounts
+    type: io.kestra.plugin.aws.s3.Upload
+    runIf: "{{ inputs.discount_amount > 0 }}"
+    region: eu-west-2
+    bucket: oss-example
+    key: "processed_orders.csv"
+    from: "{{ outputs.code.outputFiles['processed_orders.csv']}}"
+    accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ kv('AWS_SECRET_KEY_ID') }}"
+
+errors:
+  - id: slack_notification
+    type: io.kestra.plugin.notifications.slack.SlackExecution
+    url: "{{ kv('SLACK_WEBHOOK') }}"
+    channel: "#general"
+    executionId: "{{ execution.id }}"
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "@daily"

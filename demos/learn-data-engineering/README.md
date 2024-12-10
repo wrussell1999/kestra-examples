@@ -1,5 +1,11 @@
 # Livestream with Andreas Kretz
 
+Demo is split into X parts:
+1. Simple flow that loads data, sums it, and sends it to Slack
+2. Flow that loads data from an input, sums it and produces an output file, and uploads to a data lake.
+3. Flow that uses external python files to perform tasks.
+
+
 ## Kestra's UI
 
 Give a tour of the UI and how it makes managing orchestration easy.
