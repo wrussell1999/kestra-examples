@@ -1,4 +1,4 @@
-id: python_example
+id: python_sync
 namespace: company.team
 
 inputs:
