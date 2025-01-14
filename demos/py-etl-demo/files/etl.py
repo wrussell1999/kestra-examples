@@ -6,6 +6,10 @@ df = pd.read_csv(os.environ['DATASET_URL'])
 total_revenue = df['total'].sum()
 Kestra.outputs({"total": total_revenue})
 
+
+print(os.environ['DISCOUNTED_AMOUNT'])
+print(type(os.environ['DISCOUNTED_AMOUNT']))
+
 discounted_amount = int(os.environ['DISCOUNTED_AMOUNT'])
 if discount_amount > 0:
   df['discounted_total'] = df['total'] * (1 - discount_amount)
