@@ -44,7 +44,7 @@ tasks:
 
   - id: slack_message
     type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
-    url: "{{ kv('SLACK_WEBHOOK') }}"
+    url: "{{ secret('SLACK_WEBHOOK') }}"
     payload: |
       {
         "text": "Total: ${{ outputs.code.vars.total }}"
@@ -57,8 +57,8 @@ tasks:
     bucket: oss-example
     key: "processed_orders.csv"
     from: "{{ outputs.code.outputFiles['processed_orders.csv'] }}"
-    accessKeyId: "{{ kv('AWS_ACCESS_KEY_ID') }}"
-    secretKeyId: "{{ kv('AWS_SECRET_KEY_ID') }}"
+    accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
 
 errors:
   - id: slack_notification
