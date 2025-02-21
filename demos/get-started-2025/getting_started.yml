@@ -1,0 +1,25 @@
+id: getting_started
+namespace: company.team
+
+tasks:
+  - id: python_script
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    beforeCommands:
+      - pip install requests kestra
+    commands:
+      - python stars.py
+
+  - id: slack_message
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ kv('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": "Total of GitHub Stars: {{ outputs.python_script.vars.gh_stars }}"
+      }
+
+triggers:
+  - id: hour_trigger
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 0 * * * *
