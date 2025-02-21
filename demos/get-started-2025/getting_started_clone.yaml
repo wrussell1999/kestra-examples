@@ -1,0 +1,37 @@
+id: getting_started_clone
+namespace: company.team
+
+inputs:
+  - id: github_url
+    type: STRING
+    defaults: https://github.com/wrussell1999/kestra-examples
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: "{{ inputs.github_url }}"
+
+      - id: python_script
+        type: io.kestra.plugin.scripts.python.Commands
+        namespaceFiles:
+          enabled: true
+        beforeCommands:
+          - pip install requests kestra
+        commands:
+          - python stars.py
+
+      - id: slack_message
+        type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+        url: "{{ kv('SLACK_WEBHOOK') }}"
+        payload: |
+          {
+            "text": "Total of GitHub Stars: {{ outputs.python_script.vars.gh_stars }}"
+          }
+
+triggers:
+  - id: hour_trigger
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 0 * * * *
