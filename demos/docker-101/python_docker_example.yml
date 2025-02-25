@@ -1,0 +1,27 @@
+id: docker_python_example
+namespace: company.team
+
+tasks:
+  - id: build
+    type: io.kestra.plugin.docker.Build
+    tags:
+      - my-py-data-app
+    dockerfile: |
+      FROM ghcr.io/kestra-io/pydata:latest
+
+      WORKDIR /app
+      COPY . /app
+
+      CMD ["python", "main.py"]
+    inputFiles:
+      main.py: |
+        import pandas as pd
+
+        df = pd.read_csv("https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv")
+        total_revenue = df['total'].sum()
+        print(total_revenue)
+
+  - id: run
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ outputs.build.imageId }}"
+    pullPolicy: NEVER
