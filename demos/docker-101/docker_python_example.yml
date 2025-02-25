@@ -7,12 +7,18 @@ tasks:
     tags:
       - my-py-data-app
     dockerfile: |
-      FROM ghcr.io/kestra-io/pydata:latest
+      FROM python:3.12-slim
 
       WORKDIR /app
+      RUN pip install --no-cache-dir pandas
       COPY . /app
 
       CMD ["python", "main.py"]
+
+  - id: run
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ outputs.build.imageId }}"
+    pullPolicy: NEVER
     inputFiles:
       main.py: |
         import pandas as pd
@@ -20,8 +26,3 @@ tasks:
         df = pd.read_csv("https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv")
         total_revenue = df['total'].sum()
         print(total_revenue)
-
-  - id: run
-    type: io.kestra.plugin.docker.Run
-    containerImage: "{{ outputs.build.imageId }}"
-    pullPolicy: NEVER

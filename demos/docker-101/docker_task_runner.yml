@@ -1,0 +1,27 @@
+id: docker_task_runner
+namespace: company.team
+
+tasks:
+  - id: build
+    type: io.kestra.plugin.docker.Build
+    tags:
+      - my-py-data-app
+    dockerfile: |
+      FROM python:3.12-slim
+
+      WORKDIR /app
+      RUN pip install --no-cache-dir pandas
+      COPY . /app
+
+  - id: python
+    type: io.kestra.plugin.scripts.python.Script
+    containerImage: "{{ outputs.build.imageId}}"
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      pullPolicy: NEVER
+    script: |
+      import pandas as pd
+
+      df = pd.read_csv("https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv")
+      total_revenue = df['total'].sum()
+      print(total_revenue)
