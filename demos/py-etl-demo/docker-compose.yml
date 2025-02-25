@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: kestra
+      POSTGRES_PASSWORD: k3str4
+      POSTGRES_DB: etl_demo
+    ports:
+      - "5432:5432"
+    volumes:
+      - etl-postgres-data:/var/lib/postgresql/data
+volumes:
+  etl-postgres-data:
