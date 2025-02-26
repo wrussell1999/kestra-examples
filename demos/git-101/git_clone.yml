@@ -1,0 +1,20 @@
+id: git_clone
+namespace: company.team
+
+variables:
+  github_url: https://github.com/wrussell1999/git-101
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: "{{ vars.github_url }}"
+
+      - id: python
+        type: io.kestra.plugin.scripts.python.Commands
+        beforeCommands:
+          - pip install -r requirements.txt
+        commands:
+          - python main.py
