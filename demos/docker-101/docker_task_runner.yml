@@ -15,7 +15,7 @@ tasks:
 
   - id: python
     type: io.kestra.plugin.scripts.python.Script
-    containerImage: "{{ outputs.build.imageId}}"
+    containerImage: "{{ outputs.build.imageId }}"
     taskRunner:
       type: io.kestra.plugin.scripts.runner.docker.Docker
       pullPolicy: NEVER
