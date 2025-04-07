@@ -1,6 +1,6 @@
 # Demos
 
-Here is a list of demos presented
+Here is a list of demos presented:
 
 - [Kunal Webinar](./kunal-devops-webinar/): [Video](https://www.youtube.com/live/-CASLtqwYQY?si=FAy3CZTgJSiOa3FX)
 - [Modal Webinar](./modal-webinar/): [Video](https://www.youtube.com/live/bZ9vR3SjsaE?si=u84J1UDcrgDVPaSm)
