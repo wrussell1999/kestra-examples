@@ -1,0 +1,45 @@
+id: pg_csv_example
+namespace: company.team
+
+tasks:
+  - id: download_orders
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: transform
+    type: io.kestra.plugin.scripts.python.Script
+    containerImage: ghcr.io/kestra-io/pydata:latest
+    inputFiles:
+      orders.csv: "{{ outputs.download_orders.uri }}"
+    outputFiles:
+      - orders.csv
+    script: |
+      import pandas as pd
+      df = pd.read_csv('orders.csv')
+      df = df.drop(columns=['customer_email', 'customer_name'])
+      df.to_csv('orders.csv', index=False)
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.postgresql.Query
+    url: "jdbc:postgresql://host.docker.internal:5432/postgres-demo"
+    username: "{{ secret('POSTGRES_USERNAME') }}"
+    password: "{{ secret('POSTGRES_PASSWORD') }}"
+    sql: |
+      CREATE TABLE IF NOT EXISTS orders(
+        order_id varchar(5),
+        product_id varchar(5),
+        price double precision,
+        quantity integer,
+        total double precision
+      );
+
+  - id: copyin
+    type: io.kestra.plugin.jdbc.postgresql.CopyIn
+    url: "jdbc:postgresql://host.docker.internal:5432/postgres-demo"
+    username: "{{ secret('POSTGRES_USERNAME') }}"
+    password: "{{ secret('POSTGRES_PASSWORD') }}"
+    format: CSV
+    from: "{{ outputs.transform.outputFiles['orders.csv'] }}"
+    table: orders
+    header: true
+    delimiter: ","
