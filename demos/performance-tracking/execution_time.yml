@@ -17,7 +17,7 @@ inputs:
 tasks:
   - id: runs
     type: io.kestra.plugin.core.flow.ForEach
-    values: "{{ range(0, inputs.total_runs) }}"
+    values: "{{ range(1, inputs.total_runs) }}"
     tasks:
       - id: subflow
         type: io.kestra.plugin.core.flow.Subflow
@@ -51,7 +51,6 @@ tasks:
     outputs:
       - average
     script: |
-      
       durations = {{ outputs.calculate_duration }}
       total = 0
       for run in range({{ inputs.total_runs }}):
