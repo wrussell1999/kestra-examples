@@ -1,0 +1,60 @@
+id: execution_time
+namespace: company.team
+
+inputs:
+  - id: flow_id
+    type: STRING
+    defaults: transform_py_example
+
+  - id: namespace
+    type: STRING
+    defaults: tutorial
+
+  - id: total_runs
+    type: INT
+    defaults: 10
+
+tasks:
+  - id: runs
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ range(0, inputs.total_runs) }}"
+    tasks:
+      - id: subflow
+        type: io.kestra.plugin.core.flow.Subflow
+        flowId: "{{ inputs.flow_id }}"
+        namespace: "{{ inputs.namespace }}"
+
+      - id: get_exectution
+        type: io.kestra.plugin.core.http.Request
+        uri: "http://localhost:8080/api/v1/executions/{{ outputs.subflow[taskrun.value].executionId }}"
+
+      - id: calculate_duration
+        type: io.kestra.plugin.graalvm.python.Eval
+        outputs:
+          - duration
+        script: |
+          from datetime import datetime, timezone
+
+          start_raw = "{{ outputs.get_exectution[taskrun.value].body | jq('.state.startDate') | first }}"
+          end_raw = "{{ outputs.get_exectution[taskrun.value].body | jq('.state.endDate') | first }}"
+          
+          fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
+          start = datetime.strptime(start_raw, fmt).replace(tzinfo=timezone.utc)
+          end = datetime.strptime(end_raw, fmt).replace(tzinfo=timezone.utc)
+
+          delta = end - start
+          print(delta)
+          duration = delta.total_seconds()
+              
+  - id: calculate
+    type: io.kestra.plugin.graalvm.python.Eval
+    outputs:
+      - average
+    script: |
+      
+      durations = {{ outputs.calculate_duration }}
+      total = 0
+      for run in range({{ inputs.total_runs }}):
+        total += durations[str(run)]['outputs']['duration']
+      average = total / {{ inputs.total_runs }}
+      
