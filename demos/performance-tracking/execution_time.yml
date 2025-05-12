@@ -14,7 +14,19 @@ inputs:
     type: INT
     defaults: 10
 
+  - id: type
+    type: SELECT
+    values:
+      - Script
+      - GraalVM
+
 tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      - key: type
+        value: "{{ inputs.type }}"
+
   - id: runs
     type: io.kestra.plugin.core.flow.ForEach
     values: "{{ range(1, inputs.total_runs) }}"
@@ -53,7 +65,10 @@ tasks:
     script: |
       durations = {{ outputs.calculate_duration }}
       total = 0
-      for run in range({{ inputs.total_runs }}):
+      for run in range(1,{{ inputs.total_runs }}):
         total += durations[str(run)]['outputs']['duration']
       average = total / {{ inputs.total_runs }}
       
+  - id: log_average
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ inputs.type }} took {{ outputs.calculate.outputs.average }}"
