@@ -1,4 +1,4 @@
-id: execution_time
+id: scripting_execution_time
 namespace: company.team
 
 inputs:
@@ -14,7 +14,19 @@ inputs:
     type: INT
     defaults: 10
 
+  - id: type
+    type: SELECT
+    values:
+      - Script
+      - GraalVM
+
 tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      - key: type
+        value: "{{ inputs.type }}"
+
   - id: runs
     type: io.kestra.plugin.core.flow.ForEach
     values: "{{ range(1, inputs.total_runs) }}"
@@ -24,7 +36,7 @@ tasks:
         flowId: "{{ inputs.flow_id }}"
         namespace: "{{ inputs.namespace }}"
 
-      - id: get_execution
+      - id: get_exectution
         type: io.kestra.plugin.core.http.Request
         uri: "http://localhost:8080/api/v1/executions/{{ outputs.subflow[taskrun.value].executionId }}"
 

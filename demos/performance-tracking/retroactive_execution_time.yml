@@ -1,0 +1,39 @@
+id: retroactive_execution_time
+namespace: company.team
+
+inputs:
+  - id: flow_id
+    type: STRING
+    defaults: transform_py_example
+
+  - id: namespace
+    type: STRING
+    defaults: tutorial
+
+  - id: total
+    type: INT
+    defaults: 10
+
+tasks:
+  - id: get_executions
+    type: io.kestra.plugin.core.http.Download
+    uri: "http://localhost:8080/api/v1/executions?flowId={{inputs.flow_id}}&namespace={{inputs.namespace}}&size={{ inputs.total }}"
+
+  - id: get_durations
+    type: io.kestra.plugin.scripts.python.Script
+    inputFiles:
+      data.json: "{{ outputs.get_executions.uri }}"
+    script: |
+      import json
+      from kestra import Kestra
+
+      with open("data.json", "r") as f:
+        data = json.load(f)
+
+        durations = []
+        for execution in data['results']:
+            duration = float(execution['state']['duration'].replace("PT", "").replace("S", ""))
+            durations.append(duration)
+
+        average = sum(durations) / len(durations)
+        Kestra.outputs({"durations": durations, "average": average})
