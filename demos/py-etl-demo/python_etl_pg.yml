@@ -23,7 +23,7 @@ variables:
 tasks:
   - id: extract
     type: io.kestra.plugin.core.http.Download
-    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+    uri: "{{ inputs.dataset_uri }}"
   
   - id: wdir
     type: io.kestra.plugin.core.flow.WorkingDirectory
@@ -44,7 +44,7 @@ tasks:
         outputFiles:
           - "{{ vars.filename }}"
         env:
-          DATASET_URL: "data.csv"
+          DATASET: "data.csv"
           DISCOUNTED_AMOUNT: "{{ inputs.discount_amount ?? 0 }}"
           FILENAME: "{{ vars.filename }}"
         commands:
