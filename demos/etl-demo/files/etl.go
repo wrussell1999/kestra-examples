@@ -47,12 +47,20 @@ func main() {
         out = append(out, row)
     }
 
-    output := fmt.Sprintf("::{\"total\": %.2f}::", sum)
+    output := fmt.Sprintf("::{\"total\": \"Hello\"}::", sum)
     fmt.Println(output)
 
     if discount > 0 {
-        w, _ := os.Create(outFile)
+        w, err := os.Create(outFile)
+        if err != nil {
+            panic(fmt.Errorf("failed to create file: %w", err))
+        }
         defer w.Close()
-        csv.NewWriter(w).WriteAll(out)
+
+        writer := csv.NewWriter(w)
+        err = writer.WriteAll(out)
+        if err != nil {
+            panic(fmt.Errorf("error writing CSV: %w", err))
+        }
     }
 }
