@@ -37,7 +37,7 @@ tasks:
         outputFiles:
           - "{{ vars.filename }}"
         env:
-          DATASET_URL: "{{ inputs.dataset_uri }}"
+          DATASET: "{{ inputs.dataset_uri }}"
           DISCOUNTED_AMOUNT: "{{ inputs.discount_amount ?? 0 }}"
           FILENAME: "{{ vars.filename }}"
         commands:
