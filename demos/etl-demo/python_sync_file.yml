@@ -24,7 +24,7 @@ tasks:
     type: io.kestra.plugin.git.SyncNamespaceFiles
     url: "{{ vars.github_repo_url }}"
     namespace: "{{ flow.namespace }}"
-    gitDirectory: "demos/py-etl-demo/files"
+    gitDirectory: "demos/etl-demo/files"
 
   - id: code
     type: io.kestra.plugin.scripts.python.Commands
@@ -36,7 +36,7 @@ tasks:
     outputFiles:
       - "{{ vars.filename }}"
     env:
-      DATASET_URL: "{{ inputs.dataset_uri }}"
+      DATASET: "{{ inputs.dataset_uri }}"
       DISCOUNTED_AMOUNT: "{{ inputs.discount_amount ?? 0 }}"
       FILENAME: "{{ vars.filename }}"
     commands:
@@ -71,3 +71,4 @@ triggers:
   - id: schedule
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "@daily"
+    disabled: true

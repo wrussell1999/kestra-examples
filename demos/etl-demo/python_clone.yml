@@ -41,7 +41,7 @@ tasks:
           DISCOUNTED_AMOUNT: "{{ inputs.discount_amount ?? 0 }}"
           FILENAME: "{{ vars.filename }}"
         commands:
-          - python demos/py-etl-demo/files/etl.py
+          - python demos/etl-demo/files/etl.py
 
       - id: slack_message
         type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
@@ -72,3 +72,4 @@ triggers:
   - id: schedule
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "@daily"
+    disabled: true

@@ -64,3 +64,4 @@ triggers:
   - id: schedule
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "@daily"
+    disabled: true

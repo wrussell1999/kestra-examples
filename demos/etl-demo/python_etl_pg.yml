@@ -48,7 +48,7 @@ tasks:
           DISCOUNTED_AMOUNT: "{{ inputs.discount_amount ?? 0 }}"
           FILENAME: "{{ vars.filename }}"
         commands:
-          - python demos/py-etl-demo/files/etl.py
+          - python demos/etl-demo/files/etl.py
 
   - id: create_table
     type: io.kestra.plugin.jdbc.postgresql.Queries
