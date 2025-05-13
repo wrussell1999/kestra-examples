@@ -47,7 +47,7 @@ func main() {
         out = append(out, row)
     }
 
-    output := fmt.Sprintf("::{\"total\": \"Hello\"}::", sum)
+    output := fmt.Sprintf("::{\"outputs\": {\"total\": %.2f}}::", sum)
     fmt.Println(output)
 
     if discount > 0 {
