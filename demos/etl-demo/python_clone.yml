@@ -30,8 +30,6 @@ tasks:
       - id: code
         type: io.kestra.plugin.scripts.python.Commands
         containerImage: ghcr.io/kestra-io/pydata:latest
-        namespaceFiles:
-          enabled: true
         beforeCommands:
           - pip install kestra
         outputFiles:

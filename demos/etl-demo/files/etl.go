@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-    dataset := os.Getenv("DATASET_URL")
+    dataset := os.Getenv("DATASET")
     discountStr := os.Getenv("DISCOUNTED_AMOUNT")
     outFile := os.Getenv("FILENAME")
 

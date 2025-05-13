@@ -34,15 +34,12 @@ tasks:
 
       - id: transform
         type: io.kestra.plugin.scripts.go.Commands
-        containerImage: ghcr.io/kestra-io/pydata:latest
-        namespaceFiles:
-          enabled: true
         inputFiles:
           data.csv: "{{ outputs.extract.uri }}"
         outputFiles:
           - "{{ vars.filename }}"
         env:
-          DATASET_URL: "data.csv"
+          DATASET: "data.csv"
           DISCOUNTED_AMOUNT: "{{ inputs.discount_amount ?? 0 }}"
           FILENAME: "{{ vars.filename }}"
         commands:
