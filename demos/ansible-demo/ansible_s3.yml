@@ -1,4 +1,4 @@
-id: ansible
+id: ansible_s3
 namespace: company.team
 
 inputs:

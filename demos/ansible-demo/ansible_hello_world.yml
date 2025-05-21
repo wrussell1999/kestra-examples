@@ -1,0 +1,11 @@
+id: ansible_hello_world
+namespace: company.team
+tasks:
+  - id: ansible_task
+    type: io.kestra.plugin.ansible.cli.AnsibleCLI
+    inputFiles:
+      inventory.ini: "{{ read('inventory_hello_world.ini')}}"
+      myplaybook.yml: "{{ read('helloworld_playbook.yml') }}"
+    containerImage: cytopia/ansible:latest-tools
+    commands:
+      - ansible-playbook -i inventory.ini myplaybook.yml

@@ -1,0 +1,12 @@
+id: ansible_playbook_outputs
+namespace: company.team
+
+tasks:
+  - id: ansible_playbook_outputs
+    type: io.kestra.plugin.ansible.cli.AnsibleCLI
+    outputLogFile: true
+    namespaceFiles:
+      enabled: true
+    containerImage: cytopia/ansible:latest-tools
+    commands:
+      - ansible-playbook -i localhost -c local playbook.yml

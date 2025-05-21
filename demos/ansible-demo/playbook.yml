@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Create file
+      shell: echo "Test output" >> greeting.txt
+
+    - name: Register output file to var
+      shell: cat greeting.txt
+      register: myOutput
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        var: myOutput
+
+    - name: Prints two lines of messages
+      ansible.builtin.debug:
+        msg:
+          - "Multiline message : line 1"
+          - "Multiline message : line 2"
