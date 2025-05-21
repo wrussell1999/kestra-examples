@@ -1,0 +1,39 @@
+id: ansible
+namespace: company.team
+
+inputs:
+  - id: bucket_name
+    type: STRING
+    defaults: ansible-bucket-kestra
+
+tasks:
+  - id: ansible_task
+    type: io.kestra.plugin.ansible.cli.AnsibleCLI
+    containerImage: cytopia/ansible:latest-tools
+    inputFiles:
+      inventory.ini: |
+        localhost ansible_connection=local
+      myplaybook.yml: |
+        ---
+        - name: create s3 bucket
+          hosts: localhost
+          connection: local
+          tasks:
+          - name: create a simple s3 bucket
+            amazon.aws.s3_bucket:
+              name: "{{ inputs.bucket_name }}"
+              state: present
+              region: eu-west-2
+              access_key: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+              secret_key: "{{ secret('AWS_SECRET_KEY_ID') }}"
+    beforeCommands:
+      - pip install boto3 
+    commands:
+      - ansible-playbook -i inventory.ini myplaybook.yml
+
+  - id: bucket
+    type: io.kestra.plugin.aws.s3.List
+    accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
+    region: "eu-west-2"
+    bucket: "{{ inputs.bucket_name }}"
