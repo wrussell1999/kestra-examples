@@ -1,0 +1,40 @@
+id: go_inputs
+namespace: company.team
+
+inputs:
+  - id: name
+    type: STRING
+    defaults: Will
+
+  - id: columns_to_keep
+    type: ARRAY
+    itemType: STRING
+    defaults:
+      - brand
+      - price
+
+tasks:
+  - id: go
+    type: io.kestra.plugin.scripts.go.Script
+    script: |
+      package main
+
+      import (
+          "fmt"
+          "encoding/json"
+          "log"
+      )
+
+      func main() {
+          name := `{{ inputs.name }}`
+          fmt.Printf("Name: %s\n", name)
+          text := `{{ inputs.columns_to_keep }}`
+          fmt.Printf("Text: %v\n", text)
+
+          var columns []string
+          err := json.Unmarshal([]byte(text), &columns)
+          if err != nil {
+            log.Fatalf("Error unmarshalling JSON: %v", err)
+          }
+          fmt.Printf("All columns: %v\n", columns)
+      }
