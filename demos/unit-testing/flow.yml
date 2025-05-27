@@ -1,0 +1,28 @@
+id: etl_dailyproducts_tobigquery
+namespace: company.team
+
+tasks:
+  - id: send_slack_message_started
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": "{{ flow.namespace }}.{{ flow.id }}: Daily products flow has started"
+      }
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/json/orders.json
+
+  - id: transform_to_products_name
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ fromJson(read(outputs.extract.uri)) | jq('.Account.Order[].Product[].\"Product Name\"') }}"
+
+  - id: transform_to_uppercase
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ fromJson(outputs.transform_to_products_name.value) | upper }}"
+
+  - id: load
+    type: io.kestra.plugin.gcp.bigquery.Load
+    from: "{{ outputs.transform_to_uppercase.value }}"
+    destinationTable: "my_project.my_dataset.my_table"
+    format: JSON

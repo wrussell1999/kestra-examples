@@ -1,0 +1,34 @@
+id: etl_dailyproducts_tobigquery_testsuite
+namespace: company.team
+flowId: etl_dailyproducts_tobigquery
+testCases:
+  - id: extract_should_return_data
+    type: io.kestra.core.tests.flow.UnitTest
+    fixtures:
+      tasks:
+        - id: send_slack_message_started
+          description: "dont send Slack message"
+        - id: load
+          description: "dont load data into BigQuery"
+    assertions:
+      - value: "{{outputs.transform_to_uppercase.value}}"
+        isNotNull: true
+  - id: extract_should_transform_productNames_to_uppercase_mocked
+    type: io.kestra.core.tests.flow.UnitTest
+    fixtures:
+      tasks:
+        - id: send_slack_message_started
+          description: "dont send Slack message"
+        - id: load
+          description: "dont load data into BigQuery"
+        - id: extract
+          description: "dont fetch data from API"
+        - id: transform_to_products_name
+          outputs:
+            value: |
+              [
+                "my-product-1"
+              ]
+    assertions:
+      - value: "{{outputs.transform_to_uppercase.value}}"
+        contains: "MY-PRODUCT-1"
