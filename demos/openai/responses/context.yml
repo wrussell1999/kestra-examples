@@ -1,4 +1,4 @@
-id: responses
+id: responses_context
 namespace: company.team
 
 inputs:
@@ -6,13 +6,22 @@ inputs:
     type: STRING
     defaults: Explain what is Kestra in 3 sentences
 
+  - id: response_id
+    type: STRING
+    required: false
+
 tasks:
   - id: explain
     type: io.kestra.plugin.openai.Responses
     apiKey: "{{ secret('OPENAI_API_KEY') }}"
     model: gpt-4.1-mini
     input: "{{ inputs.prompt }}"
+    previousResponseId: "{{ inputs.response_id ?? '' }}"
 
   - id: log
     type: io.kestra.plugin.core.log.Log
     message: "{{ outputs.explain.outputText }}"
+
+  - id: log_response_id
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.explain.responseId }}"
