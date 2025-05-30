@@ -1,0 +1,54 @@
+id: salesforce_demo
+namespace: company.team
+
+tasks:
+  - id: create_contacts
+    type: io.kestra.plugin.ee.salesforce.Create
+    objectName: "Contact"
+    records:
+      - FirstName: "John"
+        LastName: "Doe"
+        Email: "john.doe@example.com"
+      - FirstName: "Jane"
+        LastName: "Smith"
+        Email: "jane.smith@example.com"
+    skipDuplicate: true
+
+  - id: fetch_contacts
+    type: io.kestra.plugin.ee.salesforce.SoqlQuery
+    query: "SELECT Id, FirstName, LastName, Email FROM Contact WHERE CreatedDate = THIS_WEEK"
+    fetchType: STORE
+
+  - id: pause_before_update
+    type: io.kestra.plugin.core.flow.Pause
+
+  - id: foreach_update
+    type: io.kestra.plugin.core.flow.ForEach
+    values: [0, 1]
+    tasks:     
+      - id: update_contacts
+        type: io.kestra.plugin.ee.salesforce.Update
+        objectName: "Contact"
+        records:
+          - Id: "{{ outputs.create_contacts.ids[taskrun.value] }}"
+            LastName: "Smith"
+
+  - id: pause_before_delete
+    type: io.kestra.plugin.core.flow.Pause
+
+  - id: foreach_delete
+    type: io.kestra.plugin.core.flow.ForEach
+    values: [0, 1]
+    tasks:
+      - id: delete_contacts
+        type: io.kestra.plugin.ee.salesforce.Delete
+        objectIds:
+          - "{{ outputs.create_contacts.ids[taskrun.value] }}"
+
+pluginDefaults:
+  - forced: false
+    type: io.kestra.plugin.ee.salesforce
+    values:
+      connection:
+        username: "{{ secret('SALESFORCE_USERNAME') }}"
+        password: "{{ secret('SALESFORCE_PASSWORD') }}"
