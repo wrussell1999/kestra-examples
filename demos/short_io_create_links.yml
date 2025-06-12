@@ -1,0 +1,33 @@
+id: create_links
+namespace: company.team
+
+inputs:
+  - id: release_number
+    type: STRING
+    defaults: "0-23"
+
+tasks:
+  - id: foreach
+    type: io.kestra.plugin.core.flow.ForEach
+    values: 
+      - slack
+      - linkedin
+      - x
+      - bluesky
+      - yt
+    tasks:
+      - id: create
+        type: io.kestra.plugin.core.http.Request
+        uri: https://api.short.io/links
+        method: POST
+        headers:
+          Authorization: "{{ secret('SHORT_IO_API_KEY') }}"
+        contentType: application/json
+        body: |
+          {
+            "allowDuplicates": "false",
+            "path": "release-{{inputs.release_number}}-{{taskrun.value}}",
+            "originalURL": "https://kestra.io/blog/release-{{inputs.release_number}}?utm_campaign=release-{{inputs.release_number}}&utm_medium=blog&utm_source={{taskrun.value}}",
+            "domain": "go.kestra.io"
+          }
+      
