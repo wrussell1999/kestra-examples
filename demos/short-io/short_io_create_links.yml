@@ -5,16 +5,36 @@ inputs:
   - id: release_number
     type: STRING
     defaults: "0-23"
+  
+  - id: platforms
+    type: JSON
+    defaults: |
+      [{
+          "slack": "slack"
+       },
+       {
+        "linkedin": "linkedin"
+       },
+       {
+        "x": "x"
+       },
+       {
+        "yt": "youtube"
+       },
+       {
+        "bluesky": "bluesky"
+       },
+       {
+        "hero": "website"
+       },
+       {
+        "newsfeed": "app"
+       }]
 
 tasks:
   - id: foreach
     type: io.kestra.plugin.core.flow.ForEach
-    values: 
-      - slack
-      - linkedin
-      - x
-      - bluesky
-      - yt
+    values: "{{ inputs.platforms }}"
     tasks:
       - id: create
         type: io.kestra.plugin.core.http.Request
@@ -26,8 +46,8 @@ tasks:
         body: |
           {
             "allowDuplicates": "false",
-            "path": "release-{{inputs.release_number}}-{{taskrun.value}}",
-            "originalURL": "https://kestra.io/blog/release-{{inputs.release_number}}?utm_campaign=release-{{inputs.release_number}}&utm_medium=blog&utm_source={{taskrun.value}}",
+            "path": "release-{{inputs.release_number}}-{{taskrun.value | jq('keys | .[0]')}}",
+            "originalURL": "https://kestra.io/blog/release-{{inputs.release_number}}?utm_campaign=release-{{inputs.release_number}}&utm_medium=blog&utm_source={{taskrun.value | jq('first(.[])')}}",
             "domain": "go.kestra.io"
           }
       
