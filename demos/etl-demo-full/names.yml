@@ -1,0 +1,62 @@
+id: etl_demo
+namespace: company.team
+
+tasks:
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: transform
+    type: io.kestra.plugin.scripts.python.Script
+    dependencies:
+      - pandas
+    inputFiles: 
+      data.csv: "{{ outputs.extract.uri }}"
+    outputFiles:
+      - "orders.csv"
+    script: |
+      import pandas as pd
+
+      df = pd.read_csv("data.csv")
+      df[['first_name', 'last_name']] = df['customer_name'].str.split(' ', n=1, expand=True)
+      df = df.drop('customer_name', axis=1)
+      column_order = [
+          'order_id',
+          'first_name',
+          'last_name',
+          'customer_email',
+          'product_id',
+          'price',
+          'quantity',
+          'total'
+      ]
+      df = df[column_order]
+
+      df.to_csv('orders.csv', index=False)
+
+  - id: create
+    type: io.kestra.plugin.jdbc.postgresql.Query
+    url: jdbc:postgresql://host.docker.internal:5432/postgres-demo
+    username: kestra
+    password: "{{ kv('PG_PASSWORD') }}"
+    sql: |
+      CREATE TABLE IF NOT EXISTS orders (
+        order_id INT,
+        first_name VARCHAR(255),
+        last_name VARCHAR(255),
+        customer_email VARCHAR(255),
+        product_id INT,
+        price DECIMAL(10, 2),
+        quantity INT,
+        total DECIMAL(10, 2)
+      );
+
+  - id: load_to_db
+    type: io.kestra.plugin.jdbc.postgresql.CopyIn
+    url: jdbc:postgresql://host.docker.internal:5432/postgres-demo
+    username: kestra
+    password: "{{ kv('PG_PASSWORD') }}"
+    from: "{{ outputs.transform.outputFiles['orders.csv'] }}"
+    header: true
+    table: orders
+    delimiter: ","

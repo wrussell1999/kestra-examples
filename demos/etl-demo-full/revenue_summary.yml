@@ -1,0 +1,71 @@
+id: etl_demo
+namespace: company.team
+
+tasks:
+  - id: extract_orders
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: extract_products
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/products.csv
+
+  - id: transform
+    type: io.kestra.plugin.scripts.python.Script
+    dependencies:
+      - pandas
+    inputFiles: 
+      orders.csv: "{{ outputs.extract_orders.uri }}"
+      products.csv: "{{ outputs.extract_products.uri }}"
+    outputFiles:
+      - "product_summary.csv"
+    script: |
+      import pandas as pd
+      orders_df = pd.read_csv('orders.csv')
+      orders_df.groupby('product_id')['quantity'].sum().sort_values(ascending=False)
+
+      products_df = pd.read_csv('products.csv')[['product_id', 'product_name', 'product_category', 'brand']]
+      product_sales_summary = orders_df.groupby('product_id').agg(
+            total_quantity_sold=('quantity', 'sum'),
+            total_revenue=('total', 'sum')
+        ).reset_index()
+      
+      final_column_order = [
+            'product_id',
+            'product_name',
+            'product_category',
+            'brand',
+            'total_quantity_sold',
+            'total_revenue'
+        ]
+
+      enriched_summary = pd.merge(product_sales_summary, products_df, on='product_id', how='inner')[final_column_order]
+
+      product_summary = enriched_summary.sort_values(by='product_id')
+      product_summary.to_csv("product_summary.csv", index=False)
+
+  - id: create
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    url: jdbc:postgresql://host.docker.internal:5432/postgres-demo
+    username: kestra
+    password: "{{ kv('PG_PASSWORD') }}"
+    sql: |
+      CREATE TABLE IF NOT EXISTS product_summary (
+        product_id INT,
+        product_name VARCHAR(255),
+        product_category VARCHAR(255),
+        brand VARCHAR(255),
+        total_quantity_sold INT,
+        total_revenue DECIMAL(10, 2)
+      );
+      TRUNCATE TABLE product_summary;
+
+  - id: load_to_db
+    type: io.kestra.plugin.jdbc.postgresql.CopyIn
+    url: jdbc:postgresql://host.docker.internal:5432/postgres-demo
+    username: kestra
+    password: "{{ kv('PG_PASSWORD') }}"
+    from: "{{ outputs.transform.outputFiles['product_summary.csv'] }}"
+    header: true
+    table: product_summary
+    delimiter: ","
