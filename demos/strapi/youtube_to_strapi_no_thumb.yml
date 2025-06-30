@@ -1,0 +1,59 @@
+id: youtube_to_strapi
+namespace: company.team
+
+tasks:
+  - id: fetch_videos
+    type: io.kestra.plugin.core.http.Request
+    uri: "https://www.googleapis.com/youtube/v3/search?key={{ secret('YOUTUBE_API_KEY') }}&channelId=UCMCsjAEnJXzGsg_IAZF8WHQ&part=snippet,id&order=date&maxResults=1"
+
+  - id: get_last_video
+    type: io.kestra.plugin.core.http.Request
+    uri: https://strapi.kestra.io/api/tutorial-videos?sort=publicationDate:desc&pagination[pageSize]=1
+    headers:
+      Authorization: 'Bearer {{ secret("STRAPI_API_KEY") }}'
+
+  - id: get_video_info
+    type: io.kestra.plugin.scripts.python.Script
+    beforeCommands:
+      - pip install kestra
+    script: |
+      from datetime import datetime
+      from kestra import Kestra
+
+      raw_yt = {{ outputs.fetch_videos.body }}
+      data = raw_yt['items'][0]
+      video = {
+        "video" : {
+          "data": {
+            "author": "Kestra",
+            "isFeatured": False,
+            "category": "Feature Highlight",
+            "contentType": "Feature Highlight"
+          }
+        }
+      }
+
+      video['video']['data']['title'] = data['snippet']['title']
+      video['video']['data']['url'] = f"https://youtube.com/watch?v={data['id']['videoId']}"
+      video['video']['data']['description'] = data['snippet']['description']
+      date_object = datetime.strptime(data['snippet']['publishedAt'], "%Y-%m-%dT%H:%M:%SZ") 
+      video['video']['data']['publicationDate'] = date_object.strftime("%Y-%m-%d")
+      Kestra.outputs(video)
+
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ outputs.get_last_video.body | jq('.data[0]') | first | jq('.attributes.url') | first != outputs.get_video_info.vars.video.data.url }}"
+    then:
+      - id: add_video
+        type: io.kestra.plugin.core.http.Request
+        uri: https://strapi.kestra.io/api/tutorial-videos
+        method: POST
+        headers:
+          Authorization: 'Bearer {{ secret("STRAPI_API_KEY") }}'
+        body: "{{ outputs.get_video_info.vars.video }}"
+
+triggers:
+  - id: cron
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "@daily"
+    disabled: true
