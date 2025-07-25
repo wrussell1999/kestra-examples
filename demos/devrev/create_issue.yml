@@ -1,0 +1,24 @@
+id: create_issue_if_technical
+namespace: company.team
+
+tasks:
+  - id: ollama
+    type: io.kestra.plugin.ollama.cli.OllamaCLI
+    outputFiles:
+      - output.txt
+    commands:
+      - ollama run gemma3:1b "Do you think that this is a technical issue? The title of the issue is '{{ trigger.body.title }}' and the description is '{{ trigger.body.body }}'. If you think this is a bug, please return just 'true'. Otherwise return 'false'" > output.txt
+
+  - id: create_issue
+    type: io.kestra.plugin.github.issues.Create
+    runIf: "{{ read(outputs.ollama.outputFiles['output.txt']) }}"
+    login: wrussell1999
+    oauthToken: "{{ kv('GITHUB_ACCESS_TOKEN') }}"
+    repository: wrussell1999/kestra-examples
+    title: "{{ trigger.body.title }}"
+    body: "{{ trigger.body.body }}"
+
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abcdefg
