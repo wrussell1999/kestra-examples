@@ -27,7 +27,7 @@ tasks:
         payload: |
           {
             "username": "Kestra",
-            "content": "A user needs support with issue '{{ trigger.body.title }}'"
+            "content": "A user needs support with issue '{{ trigger.body.title }}'",
             "embedList": [{
                     "title": "Discord Notification"
                 }]
