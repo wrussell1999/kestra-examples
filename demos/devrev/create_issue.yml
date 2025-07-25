@@ -1,22 +1,38 @@
-id: create_issue_if_technical
+id: devrev_example
 namespace: company.team
 
 tasks:
-  - id: ollama
+  - id: check_type
     type: io.kestra.plugin.ollama.cli.OllamaCLI
     outputFiles:
       - output.txt
     commands:
-      - ollama run gemma3:1b "Do you think that this is a technical issue? The title of the issue is '{{ trigger.body.title }}' and the description is '{{ trigger.body.body }}'. If you think this is a bug, please return just 'true'. Otherwise return 'false'" > output.txt
+      - ollama run gemma3:1b "Do you think that this is a technical issue? The title of the issue is '{{ trigger.body.title }}' and the description is '{{ trigger.body.body }}'. Only return 'true' if this is purely a technical bug / unexpected behaviour. But if it's just a user who doesn't know how to use the product, please return 'false'" > output.txt
 
-  - id: create_issue
-    type: io.kestra.plugin.github.issues.Create
-    runIf: "{{ read(outputs.ollama.outputFiles['output.txt']) }}"
-    login: wrussell1999
-    oauthToken: "{{ kv('GITHUB_ACCESS_TOKEN') }}"
-    repository: wrussell1999/kestra-examples
-    title: "{{ trigger.body.title }}"
-    body: "{{ trigger.body.body }}"
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ read(outputs.check_type.outputFiles['output.txt']) | lower | trim == 'true' }}"
+    then:
+      - id: create_issue
+        type: io.kestra.plugin.github.issues.Create
+        login: wrussell1999
+        oauthToken: "{{ kv('GITHUB_ACCESS_TOKEN') }}"
+        repository: wrussell1999/kestra-examples
+        title: "{{ trigger.body.title }}"
+        body: "{{ trigger.body.body }}"
+    else:
+      - id: contact_support
+        type: io.kestra.plugin.notifications.discord.DiscordIncomingWebhook
+        url: "{{ kv('DISCORD_WEBHOOK_URL') }}"
+        payload: |
+          {
+            "username": "Kestra",
+            "content": "A user needs support with issue '{{ trigger.body.title }}'"
+            "embedList": [{
+                    "title": "Discord Notification"
+                }]
+          }
+
 
 triggers:
   - id: webhook
