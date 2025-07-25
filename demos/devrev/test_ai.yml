@@ -1,0 +1,21 @@
+id: test_ai_agent
+namespace: company.team
+
+inputs:
+  - id: title
+    type: STRING
+  
+  - id: body
+    type: STRING
+
+tasks:
+  - id: ollama
+    type: io.kestra.plugin.ollama.cli.OllamaCLI
+    outputFiles:
+      - output.txt
+    commands:
+      - ollama run gemma3:1b "Do you think that this is a technical issue? The title of the issue is '{{ inputs.title }}' and the description is '{{ inputs.body }}'. Only return 'true' if this is purely a technical bug / unexpected behaviour. But if it's just a user who doesn't know how to use the product, please return 'false'" > output.txt
+
+  - id: log
+    type: io.kestra.plugin.core.log.Log
+    message: "The response is: {{ read(outputs.ollama.outputFiles['output.txt']) }}"
