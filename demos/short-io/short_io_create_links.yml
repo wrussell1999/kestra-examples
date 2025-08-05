@@ -47,7 +47,7 @@ tasks:
           {
             "allowDuplicates": "false",
             "path": "release-{{inputs.release_number}}-{{taskrun.value | jq('keys | .[0]') | first}}",
-            "originalURL": "https://kestra.io/blog/release-{{inputs.release_number}}?utm_campaign=release-{{inputs.release_number}}&utm_medium=blog&utm_source={{taskrun.value | jq('first(.[])') | first}}",
+            "originalURL": "https://kestra.io/blogs/release-{{inputs.release_number}}?utm_campaign=release-{{inputs.release_number}}&utm_medium=blog&utm_source={{taskrun.value | jq('first(.[])') | first}}",
             "domain": "go.kestra.io"
           }
       
