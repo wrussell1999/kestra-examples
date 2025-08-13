@@ -44,9 +44,10 @@ tasks:
           }
       - id: block_calendar
         type: io.kestra.plugin.googleworkspace.calendar.InsertEvent
-        calendarId: c_449ae86ea017d0f7dec9f51c49972392c6f361b5ee560194d081b968a6b6e101@group.calendar.google.com
+        calendarId: "{{ kv('CALENDAR_ID') }}"
         serviceAccount: "{{ kv('GOOGLE_SA') }}"
         summary: Out of office
+        description: "Gone sailing because the wind is {{ outputs.ask_ai['predictions'] | first | jq('.predictions[0].wind') | first }} knots"
         startTime:
           dateTime: "{{ now() | date(\"yyyy-MM-dd'T'09:00:00+01:00\") }}"
           timeZone: "Europe/London"
