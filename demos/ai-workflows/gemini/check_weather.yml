@@ -8,46 +8,39 @@ tasks:
     model: "gemini-2.5-flash-preview-05-20"
     prompt: "I like to go sailing when the wind is above 10 knots but below 30 knots. I sail in Cambridgeshire. If the wind is within that range, I want to know if I should go sailing or not. Also tell me the current wind speed speeds"
     jsonResponseSchema: |
-        {
-            "type": "object",
-            "properties": {
-                "predictions": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "content": {
-                              "type": "string"
-                            },
-                            "wind": {
-                              "type": "number"
-                            },
-                            "go_sailing": {
-                              "type": "boolean"
-                            }
-                        }
-                    }
-                }
+      {
+        "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "wind": {
+              "type": "number"
+            },
+            "go_sailing": {
+              "type": "boolean"
             }
-        }
+          }
+        } 
+      }
 
   - id: if
     type: io.kestra.plugin.core.flow.If
-    condition: "{{ outputs.ask_ai['predictions'] | first | jq('.predictions[0].go_sailing') | first }}"
+    condition: "{{ outputs.ask_ai['predictions'] | first | jq('.go_sailing') | first }}"
     then:
       - id: notify_me
         type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
         url: "{{ kv('SLACK_WEBHOOK') }}"
         payload: |
           {
-            "text": "{{ outputs.ask_ai['predictions'] | first | jq('.predictions[0].content') | first }}"
+            "text": "{{ outputs.ask_ai['predictions'] | first | jq('.content') | first }}"
           }
       - id: block_calendar
         type: io.kestra.plugin.googleworkspace.calendar.InsertEvent
         calendarId: "{{ kv('CALENDAR_ID') }}"
         serviceAccount: "{{ kv('GOOGLE_SA') }}"
         summary: Out of office
-        description: "Gone sailing because the wind is {{ outputs.ask_ai['predictions'] | first | jq('.predictions[0].wind') | first }} knots"
+        description: "Gone sailing because the wind is {{ outputs.ask_ai['predictions'] | first | jq('.wind') | first }} knots"
         startTime:
           dateTime: "{{ now() | date(\"yyyy-MM-dd'T'09:00:00+01:00\") }}"
           timeZone: "Europe/London"
