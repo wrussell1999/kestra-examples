@@ -11,7 +11,7 @@ tasks:
     type: io.kestra.plugin.core.http.Request
     uri: "https://api.openweathermap.org/data/2.5/weather?q={{inputs.location}}&appid={{kv('OPENWEATHERMAP_API_KEY')}}&units=metric"
 
-  - id: chat_completion
+  - id: get_digest
     type: io.kestra.plugin.anthropic.ChatCompletion
     apiKey: "{{ kv('ANTHROPIC_API_KEY') }}"
     model: "claude-3-5-sonnet-20241022"
@@ -23,7 +23,19 @@ tasks:
       - type: USER
         content: "I need to commute from Cambridge train station in London to 10 Downing Street for 9am arrival. What time should I leave for public transport?"
 
+  - id: send_digest
+    type: io.kestra.plugin.notifications.mail.MailSend
+    from: wrussell@kestra.io
+    to: wrussell@kestra.io
+    username: "{{ secret('G_EMAIL') }}"
+    password: "{{ secret('G_APP_PASSWORD') }}"
+    host: smtp.gmail.com
+    port: 465
+    subject: "Daily Digest"
+    htmlTextContent: "{{ outputs.get_digest.outputText }}"
+
 triggers:
   - id: schedule
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "0 9 * * *"
+    disabled: true
