@@ -27,8 +27,8 @@ tasks:
     type: io.kestra.plugin.notifications.mail.MailSend
     from: wrussell@kestra.io
     to: wrussell@kestra.io
-    username: "{{ secret('G_EMAIL') }}"
-    password: "{{ secret('G_APP_PASSWORD') }}"
+    username: "{{ kv('G_EMAIL') }}"
+    password: "{{ kv('G_APP_PASSWORD') }}"
     host: smtp.gmail.com
     port: 465
     subject: "Daily Digest"
