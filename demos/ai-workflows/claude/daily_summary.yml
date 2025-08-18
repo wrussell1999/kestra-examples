@@ -16,10 +16,10 @@ tasks:
     apiKey: "{{ kv('ANTHROPIC_API_KEY') }}"
     model: "claude-3-5-sonnet-20241022"
     maxTokens: 1024
-    system: "You're a helpful assistant who is going to help plan the day ahead. I'm going to ask a number of questions but I want the final response to be a morning summary of the day in a friendly manner."
+    system: "You're a helpful assistant who is going to help plan the day ahead. I'm going to ask a number of questions but I want the final response to be a morning summary of the day in a friendly manner. Add new lines between context changes as this response will be used in an email."
     messages:
       - type: USER
-        content: "What is the weather like in London? I fetched weather data from OpenWeatherMap Weather API. Use the data from that JSON response to summarise the weather for my morning summary to help me decide what I should wear for the day. The response is {{ outputs.get_weather.body }}"
+        content: "What is the weather like in London? I got weather data from OpenWeatherMap Weather API. Use the JSON response to summarise the weather for my morning summary to help me decide what I should wear for the day. The JSON response is {{ outputs.get_weather.body }}"
       - type: USER
         content: "I need to commute from Cambridge train station in London to 10 Downing Street for 9am arrival. What time should I leave for public transport?"
 
