@@ -18,7 +18,7 @@ tasks:
       - type: USER
         content: "What is the weather like in London? I fetched weather data from OpenWeatherMap Weather API. Use the data from that JSON response to summarise the weather for my morning summary to help me decide what I should wear for the day. The response is {{ outputs.get_weather.body }}"
       - type: USER
-        content: "I need to commute from Cambridge train station in London to 10 Downing Street for 9am arrival. What time should I leave for public transport?"
+        content: "I need to commute from Cambridge train station to 10 Downing Street in London for 9am arrival. What time should I leave for public transport?"
 
   - id: turn_into_html
     type: io.kestra.plugin.anthropic.ChatCompletion
