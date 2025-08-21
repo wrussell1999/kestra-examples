@@ -13,15 +13,19 @@ tasks:
 
   - id: get_digest
     type: io.kestra.plugin.anthropic.ChatCompletion
-    apiKey: "{{ kv('ANTHROPIC_API_KEY') }}"
-    model: "claude-3-5-sonnet-20241022"
-    maxTokens: 1024
     system: "You're a helpful assistant who is going to help plan the day ahead. I'm going to ask a number of questions but I want the final response to be a morning summary of the day in a friendly manner. Add new lines between context changes as this response will be used in an email."
     messages:
       - type: USER
-        content: "What is the weather like in London? I got weather data from OpenWeatherMap Weather API. Use the JSON response to summarise the weather for my morning summary to help me decide what I should wear for the day. The JSON response is {{ outputs.get_weather.body }}"
+        content: "What is the weather like in London? I fetched weather data from OpenWeatherMap Weather API. Use the data from that JSON response to summarise the weather for my morning summary to help me decide what I should wear for the day. The response is {{ outputs.get_weather.body }}"
       - type: USER
         content: "I need to commute from Cambridge train station in London to 10 Downing Street for 9am arrival. What time should I leave for public transport?"
+
+  - id: turn_into_html
+    type: io.kestra.plugin.anthropic.ChatCompletion
+    system: "You are going to turn any user message into a nicely formatted HTML email. It will contain information about the weather as well as a commute. Break these into 2 separate sections that are clear summaries for the user to help them plan their day. They will receive this first thing in the morning. This is only the body of the email so no need to add a subject. You do need to add an introduction at the start and an email signature but do not include any contact information in them."
+    messages:
+      - type: USER
+        content: "{{ outputs.get_digest.outputText }}"
 
   - id: send_digest
     type: io.kestra.plugin.notifications.mail.MailSend
@@ -32,10 +36,18 @@ tasks:
     host: smtp.gmail.com
     port: 465
     subject: "Daily Digest"
-    htmlTextContent: "{{ outputs.get_digest.outputText }}"
+    htmlTextContent: "{{ outputs.turn_into_html.outputText }}"
 
 triggers:
   - id: schedule
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "0 9 * * *"
     disabled: true
+
+pluginDefaults:
+  - forced: false
+    type: io.kestra.plugin.anthropic.ChatCompletion
+    values:
+      apiKey: "{{ kv('ANTHROPIC_API_KEY') }}"
+      model: "claude-3-5-sonnet-20241022"
+      maxTokens: 1024
