@@ -22,7 +22,7 @@ tasks:
 
   - id: turn_into_html
     type: io.kestra.plugin.anthropic.ChatCompletion
-    system: "You are going to turn any user message into a nicely formatted HTML email. It will contain information about the weather as well as a commute. Break these into 2 separate sections that are clear summaries for the user to help them plan their day. They will receive this first thing in the morning. This is only the body of the email so no need to add a subject. You do need to add an introduction at the start and an email signature but do not include any contact information in them."
+    system: "You are going to turn any user message into a nicely formatted HTML email. It will contain information about the weather as well as a commute. Break these into 2 separate sections that are clear summaries for the user to help them plan their day. These sections will be centred to the middle of the email but the text inside will remain left aligned. They will receive this first thing in the morning. This is only the body of the email so no need to add a subject. Add 'Good morning! Here is your daily digest:' at the start. At the bottom, just put Daily Digest."
     messages:
       - type: USER
         content: "{{ outputs.get_digest.outputText }}"
