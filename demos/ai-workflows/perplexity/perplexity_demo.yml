@@ -10,7 +10,6 @@ inputs:
   - id: chapter
     type: INT
     displayName: What chapter did you just finish?
-    defaults: 3
 
 tasks:
   - id: get_chapter_summary
