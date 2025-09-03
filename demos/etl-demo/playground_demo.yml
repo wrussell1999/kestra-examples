@@ -1,0 +1,29 @@
+id: playground_demo
+namespace: company.team
+
+inputs:
+  - id: dataset_uri
+    type: STRING
+    displayName: Dataset URI
+    defaults: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+tasks:
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: "{{ inputs.dataset_uri }}"
+
+  - id: python_inline
+    type: io.kestra.plugin.scripts.python.Script
+    dependencies:
+      - kestra
+      - pandas
+    inputFiles:
+      data.csv: "{{ outputs.extract.uri }}"
+    script: |
+      import os
+      import pandas as pd
+      from kestra import Kestra
+
+      df = pd.read_csv("data.csv")
+      total_revenue = df['total'].sum()
+      Kestra.outputs({"total": total_revenue})
