@@ -51,12 +51,12 @@ tasks:
     password: "{{ kv('G_APP_PASSWORD') }}"
     host: smtp.gmail.com
     port: 465
-    subject: "Daily Digest"
+    subject: "Market Research Report"
     attachments:
       - name: report.md
         uri: "{{ outputs.agent.outputFiles['report.md'] }}"
         contentType: text/plain
-    htmlTextContent: "{{ outputs.turn_into_html.outputText }}"
+    htmlTextContent: "The market research report is attached."
 
 triggers:
   - id: monday_morning_schedule
