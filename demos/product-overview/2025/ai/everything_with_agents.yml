@@ -1,5 +1,5 @@
 id: everything_with_agents
-namespace: company.ai
+namespace: company.team
 
 inputs:
   - id: prompt
@@ -62,4 +62,3 @@ triggers:
   - id: monday_morning_schedule
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "0 9 * * 1"
-    disabled: true
