@@ -10,7 +10,7 @@ pipeline {
         }
         stage('tests') {
             steps {
-                sh '. .venv/bin/activate && pytest demos/jenkins-vs-kestra/1-tests'
+                sh '. .venv/bin/activate && pytest jenkins-vs-kestra/1-tests'
             }
         }
     }

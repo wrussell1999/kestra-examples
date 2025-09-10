@@ -1,4 +1,4 @@
-id: python_etl_pg
+id: go_etl_pg
 namespace: company.team
 
 inputs:
@@ -33,12 +33,7 @@ tasks:
         url: "{{ vars.github_url }}"
 
       - id: transform
-        type: io.kestra.plugin.scripts.python.Commands
-        containerImage: ghcr.io/kestra-io/pydata:latest
-        namespaceFiles:
-          enabled: true
-        beforeCommands:
-          - pip install kestra
+        type: io.kestra.plugin.scripts.go.Commands
         inputFiles:
           data.csv: "{{ outputs.extract.uri }}"
         outputFiles:
@@ -48,7 +43,7 @@ tasks:
           DISCOUNTED_AMOUNT: "{{ inputs.discount_amount ?? 0 }}"
           FILENAME: "{{ vars.filename }}"
         commands:
-          - python demos/etl-demo/files/etl.py
+          - go run etl-demo/files/etl.go
 
   - id: create_table
     type: io.kestra.plugin.jdbc.postgresql.Queries

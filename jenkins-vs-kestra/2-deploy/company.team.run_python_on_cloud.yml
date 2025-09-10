@@ -31,6 +31,6 @@ tasks:
           executionRoleArn: "{{ vars.execution_role_arn }}"
           taskRoleArn: "{{ task_role_arn }}"
         inputFiles:
-          example.py: "{{ workingDir }}/demos/jenkins-vs-kestra/2-deploy/example.py"
+          example.py: "{{ workingDir }}/jenkins-vs-kestra/2-deploy/example.py"
         commands:
           - python example.py

@@ -21,7 +21,7 @@ tasks:
         beforeCommands:
           - pip install requests kestra
         commands:
-          - python kestra-examples/demos/get-started-2025/stars.py
+          - python kestra-examples/get-started-2025/stars.py
 
       - id: slack_message
         type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook

@@ -24,7 +24,7 @@ tasks:
     type: io.kestra.plugin.git.SyncNamespaceFiles
     url: "{{ vars.github_repo_url }}"
     namespace: "{{ flow.namespace }}"
-    gitDirectory: "demos/etl-demo/files"
+    gitDirectory: "etl-demo/files"
 
   - id: code
     type: io.kestra.plugin.scripts.python.Commands

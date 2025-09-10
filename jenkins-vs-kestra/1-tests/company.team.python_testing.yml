@@ -1,4 +1,4 @@
-id: deploy_to_cloud
+id: python_testing
 namespace: company.team
 
 tasks:
@@ -9,12 +9,16 @@ tasks:
         type: io.kestra.plugin.git.Clone
         url: https://github.com/wrussell1999/kestra-examples
         branch: main
-      
-      - id: run_code
+
+      - id: run_test
         type: io.kestra.plugin.scripts.python.Commands
         taskRunner:
           type: io.kestra.plugin.scripts.runner.docker.Docker
-        inputFiles:
-          example.py: "{{ workingDir }}/demos/jenkins-vs-kestra/2-deploy/example.py"
+        beforeCommands:
+          - pip install pytest
         commands:
-          - python example.py
+          - pytest jenkins-vs-kestra/1-tests
+
+  - id: slack
+    type: io.kestra.plugin.notifications.slack.SlackExecution
+    url: "{{ secret('SLACK_WEBHOOK') }}"
