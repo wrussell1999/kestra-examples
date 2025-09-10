@@ -1,0 +1,65 @@
+id: everything_with_agents
+namespace: company.ai
+
+inputs:
+  - id: prompt
+    type: STRING
+    defaults: |
+      Research the latest trends in workflow and data orchestration.
+      Use web search to gather current, reliable information from multiple sources.
+      Then create a well-structured Markdown report that includes an introduction,
+      key trends with short explanations, and a conclusion.
+      Save the final report as `report.md` in the `/tmp` directory.
+
+tasks:
+  - id: agent
+    type: io.kestra.plugin.ai.agent.AIAgent
+    provider:
+      type: io.kestra.plugin.ai.provider.GoogleGemini
+      apiKey: "{{ kv('GEMINI_API_KEY') }}"
+      modelName: gemini-2.5-flash
+    prompt: "{{ inputs.prompt }}"
+    systemMessage: |
+      You are a research assistant that must always follow this process:
+      1. Use the TavilyWebSearch content retriever to gather the most relevant and up-to-date information for the user prompt. Do not invent information.
+      2. Summarize and structure the findings clearly in Markdown format. Use headings, bullet points, and links when appropriate.
+      3. Save the final Markdown report as `report.md` in the `/tmp` directory by using the provided filesystem tool.
+
+      Important rules:
+      - Never output raw text in your response. The final result must always be written to `report.md`.
+      - If no useful results are retrieved, write a short note in `report.md` explaining that no information was found.
+      - Do not attempt to bypass or ignore the retriever or the filesystem tool.
+
+    contentRetrievers:
+      - type: io.kestra.plugin.ai.retriever.TavilyWebSearch
+        apiKey: "{{ kv('TAVILY_API_KEY') }}"
+        maxResults: 10
+
+    tools:
+      - type: io.kestra.plugin.ai.tool.DockerMcpClient
+        image: mcp/filesystem
+        command: ["/tmp"]
+        binds: ["{{workingDir}}:/tmp"]
+    outputFiles:
+      - report.md
+
+  - id: send_email
+    type: io.kestra.plugin.notifications.mail.MailSend
+    from: wrussell@kestra.io
+    to: wrussell@kestra.io
+    username: "{{ kv('G_EMAIL') }}"
+    password: "{{ kv('G_APP_PASSWORD') }}"
+    host: smtp.gmail.com
+    port: 465
+    subject: "Daily Digest"
+    attachments:
+      - name: report.md
+        uri: "{{ outputs.agent.outputFiles['report.md'] }}"
+        contentType: text/plain
+    htmlTextContent: "{{ outputs.turn_into_html.outputText }}"
+
+triggers:
+  - id: monday_morning_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 * * 1"
+    disabled: true
