@@ -10,7 +10,7 @@ inputs:
 tasks:
   - id: download
     type: io.kestra.plugin.core.http.Download
-    uri: "{{ inputs.file }}"
+    uri: "{{ inputs.file_url }}"
 
   - id: upload
     type: io.kestra.plugin.googleworkspace.drive.Upload
