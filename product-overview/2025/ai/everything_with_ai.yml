@@ -1,0 +1,29 @@
+id: everything_with_ai
+namespace: company.team
+
+tasks:
+  - id: send_product
+    type: io.kestra.plugin.core.http.Request
+    uri: https://dummyjson.com/products/add
+    method: POST
+    contentType: application/json
+    body: |
+      {
+        "title": "Kestra Product"
+      }
+    options:
+      allowFailed: true
+      
+  - id: check_404_and_notify
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ outputs.send_product.code == 404 }}"
+    then:
+      - id: slack_404_notification
+        type: io.kestra.plugin.notifications.slack.SlackExecution
+        url: "{{ kv('SLACK_WEBHOOK_URL') }}"
+        messageText: "Flow `{{ flow.namespace }}.{{ flow.id }}` received a 404 response from task `send_product`! Execution: {{ execution.id }}"
+
+triggers:
+  - id: nightly_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 0 * * *"
