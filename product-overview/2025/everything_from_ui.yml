@@ -1,10 +1,16 @@
 id: everything_from_ui
 namespace: company.team
 
+inputs:
+  - id: file_url
+    type: STRING
+    displayName: File URL
+    defaults: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
 tasks:
   - id: download
     type: io.kestra.plugin.core.http.Download
-    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+    uri: "{{ inputs.file }}"
 
   - id: upload
     type: io.kestra.plugin.googleworkspace.drive.Upload
