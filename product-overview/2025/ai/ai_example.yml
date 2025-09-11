@@ -1,0 +1,14 @@
+id: ai_example
+namespace: company.team
+
+tasks:
+  - id: download_csv
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+  - id: duckdb_query_csv
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    sql: |
+      SELECT * FROM read_csv_auto('orders.csv', header=True);
+    inputFiles:
+      orders.csv: "{{ outputs.download_csv.uri }}"
+    fetchType: STORE
