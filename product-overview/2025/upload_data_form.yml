@@ -1,6 +1,6 @@
 id: upload_data_form
 type: io.kestra.plugin.ee.apps.Execution
-displayName: Form to request and download data
+displayName: Form to upload data
 namespace: company.team
 flowId: everything_from_ui
 access: 
@@ -44,7 +44,7 @@ layout:
       - type: io.kestra.plugin.ee.apps.core.blocks.Alert
         style: SUCCESS
         showIcon: true
-        content: Your data is ready for download!
+        content: Your data has been uploaded to Google Sheets
 
       - type: io.kestra.plugin.ee.apps.execution.blocks.Outputs
 
@@ -60,32 +60,3 @@ layout:
         text: Submit new request
         url: "{{ app.url }}"
         style: DEFAULT
-
-description: |
-  This app is intended to request data and download it. Example flow:
-    ```yaml
-    id: get_data
-    namespace: company.team
-
-    inputs:
-      - id: data
-        displayName: Select Data to Download
-        type: SELECT
-        values: [customers, employees, products, stores, suppliers]
-        defaults: customers
-
-      - id: startDate
-        displayName: Start Date for your dataset
-        type: DATE
-        defaults: 2024-12-03
-
-    tasks:
-      - id: extract
-        type: io.kestra.plugin.core.http.Download
-        uri: https://huggingface.co/datasets/kestra/datasets/resolve/main/ion/{{ inputs.data }}.ion
-
-    outputs:
-      - id: data
-        type: FILE
-        value: "{{ outputs.extract.uri }}"
-    ```
