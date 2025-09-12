@@ -3,18 +3,18 @@ namespace: company.team
 
 inputs:
   - id: file
-    displayName: CSV File
     type: FILE
+    displayName: CSV File
 
 tasks:
   - id: upload
     type: io.kestra.plugin.googleworkspace.drive.Upload
     from: "{{ inputs.file }}"
-    contentType: "text/csv"
-    name: "Orders"
+    contentType: text/csv
+    name: Orders
     parents:
-      - "1nTsmmL3dMGNmxhU9UrE5UYGxh5LXbcNI"
-    mimeType: "application/vnd.google-apps.spreadsheet"
+      - 1nTsmmL3dMGNmxhU9UrE5UYGxh5LXbcNI
+    mimeType: application/vnd.google-apps.spreadsheet
     serviceAccount: "{{ secret('GOOGLE_SERVICE_ACCOUNT') }}"
 
   - id: notify
@@ -24,4 +24,8 @@ tasks:
       {
         "text": "New data available:  https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}"
       }
-  
+outputs:
+  - id: url
+    type: URI
+    value: https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}
+    displayName: Google Sheets URL
