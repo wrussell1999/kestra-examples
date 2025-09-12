@@ -48,15 +48,7 @@ layout:
 
       - type: io.kestra.plugin.ee.apps.execution.blocks.Outputs
 
-      - type: io.kestra.plugin.ee.apps.core.blocks.Markdown
-        content: Find more App examples in the linked repository
-
       - type: io.kestra.plugin.ee.apps.core.blocks.Button
-        text: App examples
-        url: https://github.com/kestra-io/enterprise-edition-examples/tree/main/apps
-        style: INFO
-
-      - type: io.kestra.plugin.ee.apps.core.blocks.Button
-        text: Submit new request
+        text: Upload new file
         url: "{{ app.url }}"
         style: DEFAULT
