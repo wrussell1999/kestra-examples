@@ -24,29 +24,27 @@ layout:
     blocks:
       - type: io.kestra.plugin.ee.apps.core.blocks.Markdown
         content: |
-          ## Fetching your data...
+          ## Uploading file
           Don't close this window. The results will be displayed as soon as the processing is complete.
       
       - type: io.kestra.plugin.ee.apps.core.blocks.Loading
-      - type: io.kestra.plugin.ee.apps.execution.blocks.Logs
       - type: io.kestra.plugin.ee.apps.execution.blocks.CancelExecutionButton
-        text: Cancel request
+        text: Cancel upload
 
   - on: SUCCESS
     blocks:
       - type: io.kestra.plugin.ee.apps.core.blocks.Markdown
         content: |
-          ## Request processed successfully
-          You requested the following dataset:
+          ## File uploaded
 
-      - type: io.kestra.plugin.ee.apps.execution.blocks.Inputs
 
       - type: io.kestra.plugin.ee.apps.core.blocks.Alert
         style: SUCCESS
         showIcon: true
         content: Your data has been uploaded to Google Sheets
-
+      
       - type: io.kestra.plugin.ee.apps.execution.blocks.Outputs
+
 
       - type: io.kestra.plugin.ee.apps.core.blocks.Button
         text: Upload new file
