@@ -1,29 +1,29 @@
 id: everything_from_ui
 namespace: company.team
 
-inputs:
-  - id: file
-    type: FILE
-    displayName: CSV File
+triggers:
+  - id: watch
+    type: io.kestra.plugin.aws.s3.Trigger
+    interval: "PT60S"
+    accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
+    region: "eu-west-2"
+    bucket: "will-example"
+    action: DELETE
+    filter: FILES
+    maxKeys: 1
 
 tasks:
   - id: upload
     type: io.kestra.plugin.googleworkspace.drive.Upload
-    from: "{{ inputs.file }}"
     contentType: text/csv
+    from: "{{ trigger.objects[0].uri }}"
     name: Orders
     parents:
       - 1nTsmmL3dMGNmxhU9UrE5UYGxh5LXbcNI
-    mimeType: application/vnd.google-apps.spreadsheet
     serviceAccount: "{{ secret('GOOGLE_SERVICE_ACCOUNT') }}"
+    mimeType: application/vnd.google-apps.spreadsheet
 
-  - id: notify
-    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
-    url: "{{ secret('SLACK_WEBHOOK') }}"
-    payload: |
-      {
-        "text": "New data available:  https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}"
-      }
 outputs:
   - id: url
     type: URI
