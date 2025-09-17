@@ -24,8 +24,10 @@ tasks:
     serviceAccount: "{{ secret('GOOGLE_SERVICE_ACCOUNT') }}"
     mimeType: application/vnd.google-apps.spreadsheet
 
-outputs:
-  - id: url
-    type: URI
-    value: https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}
-    displayName: Google Sheets URL
+  - id: notify
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": "New data available:  https://docs.google.com/spreadsheets/d/{{ outputs.upload.file.id }}"
+      }
