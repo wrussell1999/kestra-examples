@@ -1,0 +1,18 @@
+id: ssh_auto_pull
+namespace: company.team
+
+tasks:
+  - id: connect_to_ssh
+    type: io.kestra.plugin.fs.ssh.Command
+    host: whisper.pi.willr.uk
+    authMethod: PUBLIC_KEY
+    username: wrussell
+    privateKey: "{{ kv('SSH_KEY') }}"
+    commands:
+      - cd /home/wrussell/ssh-example
+      - git pull
+
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abcdefg
