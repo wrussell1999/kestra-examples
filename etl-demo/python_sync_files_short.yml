@@ -1,0 +1,30 @@
+id: git_sync_example
+namespace: company.team
+
+variables:
+  dataset_uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+  github_repo_url: https://github.com/wrussell1999/kestra-examples
+
+tasks:
+  - id: sync
+    type: io.kestra.plugin.git.SyncNamespaceFiles
+    url: "{{ vars.github_repo_url}}"
+    gitDirectory: etl-demo/files
+
+  - id: code
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    dependencies:
+      - kestra
+      - pandas
+    env:
+      DATASET: "{{ vars.dataset_uri }}"
+    commands:
+      - python etl_short.py
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "@daily"
+    disabled: true

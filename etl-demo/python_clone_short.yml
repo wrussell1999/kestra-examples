@@ -4,7 +4,6 @@ namespace: company.team
 variables:
   dataset_uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
   github_repo_url: https://github.com/wrussell1999/kestra-examples
-  filename: processed_orders.csv
 
 tasks:
   - id: wdir
@@ -19,11 +18,8 @@ tasks:
         dependencies:
           - kestra
           - pandas
-        outputFiles:
-          - "{{ vars.filename }}"
         env:
           DATASET: "{{ vars.dataset_uri }}"
-          FILENAME: "{{ vars.filename }}"
         commands:
           - python etl-demo/files/etl.py
 
