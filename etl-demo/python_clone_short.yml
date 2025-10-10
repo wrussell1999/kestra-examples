@@ -1,0 +1,34 @@
+id: git_clone_example
+namespace: company.team
+
+variables:
+  dataset_uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+  github_repo_url: https://github.com/wrussell1999/kestra-examples
+  filename: processed_orders.csv
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: "{{ vars.github_repo_url }}"
+
+      - id: code
+        type: io.kestra.plugin.scripts.python.Commands
+        dependencies:
+          - kestra
+          - pandas
+        outputFiles:
+          - "{{ vars.filename }}"
+        env:
+          DATASET: "{{ vars.dataset_uri }}"
+          FILENAME: "{{ vars.filename }}"
+        commands:
+          - python etl-demo/files/etl.py
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "@daily"
+    disabled: true
