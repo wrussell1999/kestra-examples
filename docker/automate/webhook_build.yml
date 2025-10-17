@@ -1,0 +1,25 @@
+id: webhook_build
+namespace: company.team
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/wrussell1999/docker-example
+
+      - id: build
+        type: io.kestra.plugin.docker.Build
+        tags:
+          - hello-world
+        dockerfile: Dockerfile
+
+      - id: run
+        type: io.kestra.plugin.docker.Run
+        containerImage: "{{ outputs.build.imageId }}"
+
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abcdefg
