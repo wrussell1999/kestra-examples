@@ -1,0 +1,31 @@
+id: automated_testing
+namespace: company.team
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/kestra-io/plugin-template
+
+      - id: build
+        type: io.kestra.plugin.docker.Build
+        tags:
+          - test-suite
+        dockerfile: |
+          FROM eclipse-temurin:21-jdk
+          WORKDIR /app
+          COPY . .
+
+          RUN chmod +x gradlew
+          RUN ./gradlew test
+
+      - id: run
+        type: io.kestra.plugin.docker.Run
+        containerImage: "{{ outputs.build.imageId }}"
+
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abcdefg
