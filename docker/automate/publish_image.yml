@@ -1,0 +1,23 @@
+id: publish_image
+namespace: company.team
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/wrussell1999/docker-example
+
+      - id: build
+        type: io.kestra.plugin.docker.Build
+        dockerfile: Dockerfile
+        tags:
+          - ghcr.io/wrussell1999/docker-example:latest
+        labels:
+          org.opencontainers.image.source: https://github.com/wrussell1999/docker-example
+          org.opencontainers.image.description: "My example container image"
+        push: true
+        credentials:
+          username: wrussell1999
+          password: "{{ kv('GITHUB_ACCESS_TOKEN') }}"
