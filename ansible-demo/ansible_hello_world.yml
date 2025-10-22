@@ -4,7 +4,7 @@ tasks:
   - id: ansible_task
     type: io.kestra.plugin.ansible.cli.AnsibleCLI
     inputFiles:
-      inventory.ini: "{{ read('inventory_hello_world.ini')}}"
+      inventory.ini: "{{ read('inventory_hello_world.ini') }}"
       myplaybook.yml: "{{ read('helloworld_playbook.yml') }}"
     containerImage: cytopia/ansible:latest-tools
     commands:
