@@ -1,0 +1,8 @@
+---
+- name: Configure a remote Linux server
+  hosts: webservers
+  become: yes  # run tasks with sudo
+  tasks:
+    - name: Run the equivalent of "apt-get update" as a separate step
+      apt:
+        update_cache: yes
