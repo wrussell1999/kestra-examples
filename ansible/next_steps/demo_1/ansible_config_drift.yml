@@ -1,0 +1,28 @@
+id: ansible_config_drift
+namespace: company.team
+
+tasks:
+  - id: set_up_env
+    type: io.kestra.plugin.ansible.cli.AnsibleCLI
+    namespaceFiles:
+      enabled: true
+    taskRunner: 
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - ansible-playbook -i inventory.ini myplaybook.yml
+
+  - id: check_drift
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    runIf: "{{ outputs.set_up_env.vars.outputs[1].changed | lower == 'true' }}"
+    url: "{{ kv('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+          "text": "Configuration updated"
+      }
+
+
+triggers:
+  - id: check_nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 0 3 * * *
+    disabled: true
