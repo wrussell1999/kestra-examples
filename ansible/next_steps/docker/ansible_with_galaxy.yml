@@ -8,6 +8,12 @@ tasks:
       enabled: true
     taskRunner: 
       type: io.kestra.plugin.core.runner.Process
+    ansibleConfig: |
+      [defaults]
+      interpreter_python = auto_silent
+      log_path={{ workingDir }}/log
+      callback_plugins = ./callback_plugins
+      stdout_callback = kestra_logger
     beforeCommands:
       - ansible-galaxy collection install community.docker
     commands:
