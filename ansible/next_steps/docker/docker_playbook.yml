@@ -1,0 +1,14 @@
+---
+- name: Ensure nginx container is running and pinned to 8080:80
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Run nginx container
+      community.docker.docker_container:
+        name: kestra-demo-nginx
+        image: nginx:stable
+        state: started
+        restart_policy: always
+        published_ports:
+          - "8080:80"

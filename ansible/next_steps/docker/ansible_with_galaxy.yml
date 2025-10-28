@@ -1,0 +1,29 @@
+id: ansible_with_galaxy
+namespace: company.team
+
+tasks:
+  - id: setup_docker
+    type: io.kestra.plugin.ansible.cli.AnsibleCLI
+    namespaceFiles:
+      enabled: true
+    taskRunner: 
+      type: io.kestra.plugin.core.runner.Process
+    beforeCommands:
+      - ansible-galaxy collection install community.docker
+    commands:
+      - ansible-playbook -i docker_inventory.ini docker_playbook.yml
+
+  - id: check_drift
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    runIf: "{{ outputs.setup_docker.vars.outputs[1].changed | lower == 'true' }}"
+    url: "{{ kv('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+          "text": "Configuration drift detected - configuration restored"
+      }
+
+triggers:
+  - id: check_nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 0 3 * * *
+    disabled: true

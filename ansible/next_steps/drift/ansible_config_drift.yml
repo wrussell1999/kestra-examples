@@ -20,7 +20,6 @@ tasks:
           "text": "Configuration updated"
       }
 
-
 triggers:
   - id: check_nightly
     type: io.kestra.plugin.core.trigger.Schedule
