@@ -1,0 +1,37 @@
+id: test_instance
+namespace: company.team
+
+tasks:
+  - id: hello
+    type: io.kestra.plugin.core.log.Log
+    message: Hello World! 🚀
+    
+  - id: write_file
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner: 
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - echo "hi" > hello.txt
+    outputFiles:
+      - hello.txt
+
+  - id: docker
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - echo "hello" > docker.txt
+    outputFiles:
+      - docker.txt
+
+  - id: write_output
+    type: io.kestra.plugin.core.debug.Return
+    format: This is an output
+
+  - id: add_kv_store
+    type: io.kestra.plugin.core.kv.Set
+    key: example
+    kvType: STRING
+    value: value
+
+  - id: log_kv
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ kv('example') }}"
