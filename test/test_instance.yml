@@ -11,14 +11,14 @@ tasks:
     taskRunner: 
       type: io.kestra.plugin.core.runner.Process
     commands:
-      - echo "hi" > hello.txt
+      - echo "hi from process" > process.txt
     outputFiles:
-      - hello.txt
+      - process.txt
 
   - id: docker
     type: io.kestra.plugin.scripts.shell.Commands
     commands:
-      - echo "hello" > docker.txt
+      - echo "hi from docker" > docker.txt
     outputFiles:
       - docker.txt
 
@@ -34,4 +34,4 @@ tasks:
 
   - id: log_kv
     type: io.kestra.plugin.core.log.Log
-    message: "{{ kv('example') }}"
+    message: "This is from the KV Store: {{ kv('example') }}"
