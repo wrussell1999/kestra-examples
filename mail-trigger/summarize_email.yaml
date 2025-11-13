@@ -1,0 +1,29 @@
+id: summarize_email
+namespace: company.team
+
+tasks:
+  - id: ai_summary
+    type: io.kestra.plugin.ai.agent.AIAgent
+    systemMessage: "Summarize the content of all the emails with any actions required highlighted separately. Prioritize the most important.  Keep it very concise. first. Output should be a single, clear text. Add a new line between each email."
+    prompt: |
+      {{ trigger.emails }}
+    provider:
+        modelName: gpt-5-mini
+        type: io.kestra.plugin.ai.provider.OpenAI
+        apiKey: "{{ kv('OPENAI_API_KEY') }}"
+
+  - id: log_summary
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.ai_summary.textOutput }}"
+
+triggers:
+  - id: gmail_inbox_trigger
+    type: io.kestra.plugin.notifications.mail.MailReceivedTrigger
+    protocol: IMAP
+    host: imap.gmail.com
+    port: 993
+    username: "wrussell@kestra.io"
+    password: "{{ kv('G_APP_PASSWORD') }}"
+    folder: INBOX
+    interval: PT1M
+    ssl: true

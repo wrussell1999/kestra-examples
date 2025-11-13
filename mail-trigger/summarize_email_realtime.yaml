@@ -1,0 +1,31 @@
+id: summarize_email_realtime
+namespace: company.team
+
+tasks:
+  - id: ai_summary
+    type: io.kestra.plugin.ai.agent.AIAgent
+    systemMessage: "Summarize the content of the email. The summary should include the subject , date, and a concise summary of the body. Output should be a single, clear text."
+    prompt: |
+      {{ trigger.subject }}
+      {{ trigger.date }}
+      {{ trigger.body }}
+    provider:
+        modelName: gpt-5-mini
+        type: io.kestra.plugin.ai.provider.OpenAI
+        apiKey: "{{ kv('OPENAI_API_KEY') }}"
+
+  - id: log_summary
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.ai_summary.textOutput }}"
+
+triggers:
+  - id: gmail_inbox_trigger
+    type: io.kestra.plugin.notifications.mail.RealTimeTrigger
+    protocol: IMAP
+    host: imap.gmail.com
+    port: 993
+    username: "wrussell@kestra.io"
+    password: "{{ kv('G_APP_PASSWORD') }}"
+    folder: INBOX
+    interval: PT3S
+    ssl: true
