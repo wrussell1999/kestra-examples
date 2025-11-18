@@ -6,7 +6,7 @@ tasks:
     type: io.kestra.plugin.core.log.Log
     message: Hello World! 🚀
     
-  - id: write_file
+  - id: process_write_file
     type: io.kestra.plugin.scripts.shell.Commands
     taskRunner: 
       type: io.kestra.plugin.core.runner.Process
@@ -15,12 +15,21 @@ tasks:
     outputFiles:
       - process.txt
 
-  - id: docker
+  - id: docker_write_file
     type: io.kestra.plugin.scripts.shell.Commands
     commands:
       - echo "hi from docker" > docker.txt
     outputFiles:
       - docker.txt
+
+  - id: read_files
+    type: io.kestra.plugin.scripts.shell.Commands
+    inputFiles:
+      process.txt: "{{ outputs.process_write_file.outputFiles['process.txt'] }}"
+      docker.txt: "{{ outputs.docker_write_file.outputFiles['docker.txt'] }}"
+    commands:
+      - cat process.txt
+      - cat docker.txt
 
   - id: write_output
     type: io.kestra.plugin.core.debug.Return
@@ -35,3 +44,24 @@ tasks:
   - id: log_kv
     type: io.kestra.plugin.core.log.Log
     message: "This is from the KV Store: {{ kv('example') }}"
+
+  - id: create_ns_file
+    type: io.kestra.plugin.core.namespace.UploadFiles
+    filesMap: "{{ outputs.process_write_file.outputFiles }}"
+    namespace: "{{ flow.namespace }}"
+
+  - id: read_ns_file
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner: 
+      type: io.kestra.plugin.core.runner.Process
+    namespaceFiles:
+      enabled: true
+    commands:
+      - cat process.txt
+
+  - id: delete_ns_file
+    type: io.kestra.plugin.core.namespace.DeleteFiles
+    namespace: "{{ flow.namespace }}"
+    files:
+      - "**"
+
