@@ -1,0 +1,150 @@
+id: etl_pipeline
+namespace: company.team
+
+inputs:
+
+  - id: year
+    type: SELECT
+    displayName: Select year
+    values: ["2019", "2020"]
+    defaults: "2019"
+
+  - id: month
+    type: SELECT
+    displayName: Select month
+    values: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+    defaults: "01"
+
+variables:
+  file: "yellow_tripdata_{{inputs.year}}-{{inputs.month}}.csv"
+  staging_table: "public.yellow_tripdata_staging"
+  table: "public.yellow_tripdata"
+  data: "{{outputs.extract.outputFiles['yellow_tripdata_' ~ inputs.year ~ '-' ~ inputs.month ~ '.csv']}}"
+
+tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      file: "{{render(vars.file)}}"
+      taxi: "yellow"
+
+  - id: extract
+    type: io.kestra.plugin.scripts.shell.Commands
+    outputFiles:
+      - "*.csv"
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - wget -qO- https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/{{render(vars.file)}}.gz | gunzip > {{render(vars.file)}}
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    sql: |
+      CREATE TABLE IF NOT EXISTS {{vars.table}} (
+          unique_row_id          text,
+          filename               text,
+          VendorID               text,
+          tpep_pickup_datetime   timestamp,
+          tpep_dropoff_datetime  timestamp,
+          passenger_count        integer,
+          trip_distance          double precision,
+          RatecodeID             text,
+          store_and_fwd_flag     text,
+          PULocationID           text,
+          DOLocationID           text,
+          payment_type           integer,
+          fare_amount            double precision,
+          extra                  double precision,
+          mta_tax                double precision,
+          tip_amount             double precision,
+          tolls_amount           double precision,
+          improvement_surcharge  double precision,
+          total_amount           double precision,
+          congestion_surcharge   double precision
+      );
+
+  - id: create_staging_table
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    sql: |
+      CREATE TABLE IF NOT EXISTS {{vars.staging_table}} (
+          unique_row_id          text,
+          filename               text,
+          VendorID               text,
+          tpep_pickup_datetime   timestamp,
+          tpep_dropoff_datetime  timestamp,
+          passenger_count        integer,
+          trip_distance          double precision,
+          RatecodeID             text,
+          store_and_fwd_flag     text,
+          PULocationID           text,
+          DOLocationID           text,
+          payment_type           integer,
+          fare_amount            double precision,
+          extra                  double precision,
+          mta_tax                double precision,
+          tip_amount             double precision,
+          tolls_amount           double precision,
+          improvement_surcharge  double precision,
+          total_amount           double precision,
+          congestion_surcharge   double precision
+      );
+
+  - id: truncate_staging_table
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    sql: |
+      TRUNCATE TABLE {{vars.staging_table}};
+
+  - id: copy_in_to_staging_table
+    type: io.kestra.plugin.jdbc.postgresql.CopyIn
+    format: CSV
+    from: "{{render(vars.data)}}"
+    table: "{{vars.staging_table}}"
+    header: true
+    columns: [VendorID,tpep_pickup_datetime,tpep_dropoff_datetime,passenger_count,trip_distance,RatecodeID,store_and_fwd_flag,PULocationID,DOLocationID,payment_type,fare_amount,extra,mta_tax,tip_amount,tolls_amount,improvement_surcharge,total_amount,congestion_surcharge]
+
+  - id: add_unique_id_and_filename
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    sql: |
+      UPDATE {{vars.staging_table}}
+      SET 
+        unique_row_id = md5(
+          COALESCE(CAST(VendorID AS text), '') ||
+          COALESCE(CAST(tpep_pickup_datetime AS text), '') || 
+          COALESCE(CAST(tpep_dropoff_datetime AS text), '') || 
+          COALESCE(PULocationID, '') || 
+          COALESCE(DOLocationID, '') || 
+          COALESCE(CAST(fare_amount AS text), '') || 
+          COALESCE(CAST(trip_distance AS text), '')      
+        ),
+        filename = '{{render(vars.file)}}';
+
+  - id: merge_data
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    sql: |
+      MERGE INTO {{vars.table}} AS T
+      USING {{vars.staging_table}} AS S
+      ON T.unique_row_id = S.unique_row_id
+      WHEN NOT MATCHED THEN
+        INSERT (
+          unique_row_id, filename, VendorID, tpep_pickup_datetime, tpep_dropoff_datetime,
+          passenger_count, trip_distance, RatecodeID, store_and_fwd_flag, PULocationID,
+          DOLocationID, payment_type, fare_amount, extra, mta_tax, tip_amount, tolls_amount,
+          improvement_surcharge, total_amount, congestion_surcharge
+        )
+        VALUES (
+          S.unique_row_id, S.filename, S.VendorID, S.tpep_pickup_datetime, S.tpep_dropoff_datetime,
+          S.passenger_count, S.trip_distance, S.RatecodeID, S.store_and_fwd_flag, S.PULocationID,
+          S.DOLocationID, S.payment_type, S.fare_amount, S.extra, S.mta_tax, S.tip_amount, S.tolls_amount,
+          S.improvement_surcharge, S.total_amount, S.congestion_surcharge
+        );
+  
+  - id: purge_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+    description: This will remove output files. If you'd like to explore Kestra outputs, disable it.
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.postgresql
+    values:
+      url: jdbc:postgresql://pg_etl:5432/etl
+      username: kestra
+      password: k3str4
