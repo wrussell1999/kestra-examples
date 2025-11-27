@@ -1,0 +1,30 @@
+id: 01_advent
+namespace: advent
+
+inputs:
+  - id: confirm
+    type: BOOL
+    defaults: false
+
+  - id: items
+    type: ARRAY
+    itemType: STRING
+    defaults:
+      - Option 1
+      - Option 2
+tasks:
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ inputs.confirm }}"
+    then:
+      - id: confirm_log
+        type: io.kestra.plugin.core.log.Log
+        message: "Hello!"
+
+  - id: foreach
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ inputs.items }}"
+    tasks:
+      - id: log
+        type: io.kestra.plugin.core.log.Log
+        message: "{{ taskrun.value }}"

@@ -1,0 +1,26 @@
+id: 03_advent
+namespace: advent
+
+inputs:
+  - id: uri
+    type: URI
+    defaults: https://kestra.io/api/mock
+
+tasks:
+  - id: execute_python
+    type: io.kestra.plugin.scripts.python.Script
+    dependencies:
+      - kestra
+      - requests
+    script: |
+      from kestra import Kestra
+      import requests
+      
+      response = requests.get('{{ inputs.uri }}')
+      print(response.status_code)
+      
+      Kestra.outputs({'status': response.status_code, 'text': response.text})
+
+  - id: log
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.execute_python.vars.text | jq('.body') | first }}"

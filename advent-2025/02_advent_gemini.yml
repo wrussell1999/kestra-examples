@@ -1,0 +1,38 @@
+id: 02_advent
+namespace: advent
+
+inputs:
+  - id: prompt
+    type: STRING
+
+tasks:
+  - id: ask_ai
+    type: io.kestra.plugin.gemini.StructuredOutputCompletion
+    apiKey: "{{ kv('GEMINI_API_KEY', 'company.team') }}"
+    model: "gemini-2.5-flash"
+    prompt: "{{ inputs.prompt }}"
+    jsonResponseSchema: |
+      {
+        "type": "object",
+          "properties": {
+            "answer": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": "string"
+            }
+          }
+        } 
+      }
+
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ outputs.ask_ai.predictions | first | jq('.answer') | first }}"
+    then: 
+      - id: log_confirm
+        type: io.kestra.plugin.core.log.Log
+        message: "True"
+    else:
+      - id: log_reason
+        type: io.kestra.plugin.core.log.Log
+        message: "{{ outputs.ask_ai.predictions | first | jq('.reason') | first }}"
