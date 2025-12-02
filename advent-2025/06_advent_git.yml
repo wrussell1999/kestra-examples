@@ -1,0 +1,16 @@
+id: 06_advent
+namespace: company.team
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/wrussell1999/kestra-examples
+
+      - id: execute_code
+        type: io.kestra.plugin.scripts.shell.Commands
+        commands:
+          - chmod +x advent-2025/files/06_advent_git.sh
+          - ./advent-2025/files/06_advent_git.sh
