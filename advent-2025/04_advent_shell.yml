@@ -1,0 +1,16 @@
+id: 04_advent
+namespace: company.team
+
+tasks:
+  - id: http_download
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: shell_script_task
+    type: io.kestra.plugin.scripts.shell.Script
+    inputFiles:
+      orders.csv: "{{ outputs.http_download.uri }}"
+    outputFiles:
+      - headers.txt
+    script: |
+      head -n 1 orders.csv >> headers.txt
