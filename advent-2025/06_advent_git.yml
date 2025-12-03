@@ -1,5 +1,5 @@
 id: 06_advent
-namespace: company.team
+namespace: advent
 
 tasks:
   - id: wdir

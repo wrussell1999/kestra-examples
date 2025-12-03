@@ -1,5 +1,5 @@
 id: 05_advent
-namespace: company.team
+namespace: advent
 
 inputs:
   - id: columns_to_keep

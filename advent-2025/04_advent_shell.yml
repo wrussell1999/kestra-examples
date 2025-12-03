@@ -1,5 +1,5 @@
 id: 04_advent
-namespace: company.team
+namespace: advent
 
 tasks:
   - id: http_download
