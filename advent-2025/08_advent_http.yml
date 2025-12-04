@@ -1,0 +1,20 @@
+id: advent_08
+namespace: advent
+
+inputs:
+  - id: payload
+    type: JSON
+    defaults: |
+      {"title": "Kestra Pen"}
+
+tasks:
+  - id: send_data
+    type: io.kestra.plugin.core.http.Request
+    uri: https://dummyjson.com/products/add
+    method: POST
+    contentType: application/json
+    body: "{{ inputs.payload }}"
+
+  - id: log_response
+    type: io.kestra.plugin.core.log.Log
+    message: '{{ outputs.send_data.body }}'

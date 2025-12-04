@@ -1,0 +1,43 @@
+id: advent_07
+namespace: advent
+
+variables:
+  table: orders
+
+tasks:
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    sql: |
+      CREATE TABLE IF NOT EXISTS {{ vars.table }} (
+          order_id               integer,
+          customer_name          text,
+          customer_email         text,
+          product_id             integer,
+          price                  double precision,
+          quantity               integer,
+          total                  double precision
+        );
+
+  - id: load
+    type: io.kestra.plugin.jdbc.postgresql.CopyIn
+    format: CSV
+    from: "{{ outputs.extract.uri }}"
+    table: "{{ vars.table }}"
+    header: true
+    columns: [ order_id, customer_name, customer_email, product_id, price, quantity, total ]
+
+  - id: query
+    type: io.kestra.plugin.jdbc.postgresql.Query
+    fetchType: STORE
+    sql: SELECT * FROM public.{{ vars.table }}
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.postgresql
+    values:
+      url: jdbc:postgresql://pg_etl:5432/etl
+      username: kestra
+      password: k3str4
