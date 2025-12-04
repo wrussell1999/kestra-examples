@@ -1,0 +1,29 @@
+id: 10_advent
+namespace: advent
+
+tasks:
+  - id: code
+    type: io.kestra.plugin.scripts.python.Script
+    containerImage: ghcr.io/kestra-io/pydata:latest
+    beforeCommands:
+      - pip install kestra
+    outputFiles:
+      - processed_orders.csv
+    script: |
+      from kestra import Kestra
+      import pandas as pd
+
+      df = pd.read_csv('https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv')
+      df['order_category'] = pd.cut(df['total'],
+                                    bins=[0, 50, 150, float('inf')],
+                                    labels=['Small', 'Medium', 'Large'])
+      df.to_csv('processed_orders.csv', index=False)
+  
+  - id: s3_upload_discounts
+    type: io.kestra.plugin.aws.s3.Upload
+    region: eu-west-2
+    bucket: advent
+    key: "processed_orders.csv"
+    from: "{{ outputs.code.outputFiles['processed_orders.csv'] }}"
+    accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+    secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"

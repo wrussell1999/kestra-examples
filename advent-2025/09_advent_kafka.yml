@@ -1,0 +1,30 @@
+id: 09_advent
+namespace: advent
+
+tasks:
+- id: if_condition
+  type: io.kestra.plugin.core.flow.If
+  condition: "{{ trigger.value == 'error' }}"
+  then:
+    - id: log
+      type: io.kestra.plugin.core.log.Log
+      message: "Error message: {{ execution.id }}"
+  else:
+    - id: log_else
+      type: io.kestra.plugin.core.log.Log
+      message: "Nothing to worry about."
+
+triggers:
+- id: realtime_trigger
+  type: io.kestra.plugin.kafka.RealtimeTrigger
+  topic: tutorial
+  properties:
+    bootstrap.servers: serverless.warpstream.com:9092
+    security.protocol: SASL_SSL
+    sasl.mechanism: PLAIN
+    sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username=USERNAME password=PASSWORD;
+  serdeProperties:
+    schema.registry.url: http://localhost:8085
+    keyDeserializer: STRING
+    valueDeserializer: STRING
+  groupId: tutorial
