@@ -1,0 +1,32 @@
+id: data_lake_process
+namespace: zoomcamp
+
+variables:
+  table: "{{secret('GCP_PROJECT_ID')}}.wrussell.demo"
+
+tasks:
+  - id: each
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ trigger.blobs | jq('.[].name') }}"
+    tasks:
+      - id: load_into_bigquery
+        type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
+        from:
+          - "gs://{{secret('GCP_BUCKET_NAME')}}/{{ taskrun.value | replace({'inbox/': 'bigquery/'}) }}"
+        destinationTable: "{{ render(vars.table) }}_{{taskrun.iteration}}"
+        format: PARQUET
+        writeDisposition: WRITE_TRUNCATE 
+
+triggers:
+  - id: gcs_trigger
+    type: io.kestra.plugin.gcp.gcs.Trigger
+    interval: PT1M
+    from: "gs://{{secret('GCP_BUCKET_NAME')}}/inbox/"
+    action: MOVE
+    moveDirectory: "gs://{{secret('GCP_BUCKET_NAME')}}/bigquery/"
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{ secret('GOOGLE_SA') }}"
+      projectId: "kestra-sandbox"

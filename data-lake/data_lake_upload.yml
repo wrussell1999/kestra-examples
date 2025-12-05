@@ -1,0 +1,41 @@
+id: data_lake_upload
+namespace: zoomcamp
+
+inputs:
+  - id: year
+    type: SELECT
+    displayName: Select year
+    values: ["2024", "2025"]
+    defaults: "2025"
+
+  - id: month
+    type: SELECT
+    displayName: Select month
+    values: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+    defaults: "01"
+
+variables:
+  file: "yellow_tripdata_{{inputs.year}}-{{inputs.month}}.parquet"
+  gcs_file: "gs://{{secret('GCP_BUCKET_NAME')}}/inbox/{{vars.file}}"
+  table: "{{secret('GCP_PROJECT_ID')}}.wrussell.demo"
+
+tasks:
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: "https://d37ci6vzurychx.cloudfront.net/trip-data/{{render(vars.file)}}"
+
+  - id: upload_to_data_lake
+    type: io.kestra.plugin.gcp.gcs.Upload
+    from: "{{ outputs.extract.uri }}"
+    to: "{{ render(vars.gcs_file) }}"
+  
+  - id: list_files
+    type: io.kestra.plugin.gcp.gcs.List
+    from: "gs://{{secret('GCP_BUCKET_NAME')}}"
+    filter: FILES
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{ secret('GOOGLE_SA') }}"
+      projectId: "kestra-sandbox"
