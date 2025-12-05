@@ -31,7 +31,7 @@ tasks:
   
   - id: list_files
     type: io.kestra.plugin.gcp.gcs.List
-    from: "gs://{{secret('GCP_BUCKET_NAME')}}"
+    from: "gs://{{secret('GCP_BUCKET_NAME')}}/inbox/"
     filter: FILES
 
 pluginDefaults:
