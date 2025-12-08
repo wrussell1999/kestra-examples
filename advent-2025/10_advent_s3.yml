@@ -2,28 +2,34 @@ id: 10_advent
 namespace: advent
 
 tasks:
-  - id: code
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: transform
     type: io.kestra.plugin.scripts.python.Script
-    containerImage: ghcr.io/kestra-io/pydata:latest
-    beforeCommands:
-      - pip install kestra
+    dependencies:
+      - kestra
+      - pandas
+    inputFiles:
+      orders.csv: "{{ outputs.extract.uri }}"
     outputFiles:
       - processed_orders.csv
     script: |
       from kestra import Kestra
       import pandas as pd
 
-      df = pd.read_csv('https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv')
+      df = pd.read_csv('orders.csv')
       df['order_category'] = pd.cut(df['total'],
                                     bins=[0, 50, 150, float('inf')],
                                     labels=['Small', 'Medium', 'Large'])
       df.to_csv('processed_orders.csv', index=False)
   
-  - id: s3_upload_discounts
+  - id: load
     type: io.kestra.plugin.aws.s3.Upload
     region: eu-west-2
-    bucket: advent
+    bucket: kestra-advent
     key: "processed_orders.csv"
-    from: "{{ outputs.code.outputFiles['processed_orders.csv'] }}"
+    from: "{{ outputs.transform.outputFiles['processed_orders.csv'] }}"
     accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
     secretKeyId: "{{ secret('AWS_SECRET_KEY_ID') }}"
