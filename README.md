@@ -8,7 +8,7 @@ Here is a list of demos presented:
 
 - [Kunal Webinar](./kunal-devops-webinar/): [Video](https://www.youtube.com/live/-CASLtqwYQY?si=FAy3CZTgJSiOa3FX)
 - [Modal Webinar](./modal-webinar/): [Video](https://www.youtube.com/live/bZ9vR3SjsaE?si=u84J1UDcrgDVPaSm)
-- [WarpStream Video](./warpstream-video/): [Video](https://youtu.be/fWYxJtp-vUE?si=HinRGKB0624bXEeX)
+- [WarpStream Video](./kafka/warpstream/): [Video](https://youtu.be/fWYxJtp-vUE?si=HinRGKB0624bXEeX)
 - [Shifty Tech Talks](./shifty-tech-talk/): [Video](https://www.linkedin.com/events/shiftytechtalks-let-stalkaboutk7233756351355617282/theater/)
 - [AI Approval - 0.17 Release](./ai-approval-0.17-release/): [Video](https://youtu.be/ohEA2eYaQrc?si=z8-MYvFMSJpllwT0)
 - [Product Overview](./product-overview/): [Video](https://youtu.be/feC6-KQLYyA?si=5-ce5gzPLpExyPDf)
