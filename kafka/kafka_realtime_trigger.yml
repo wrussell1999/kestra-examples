@@ -1,7 +1,12 @@
-id: 09_advent
-namespace: advent
+id: kafka_realtime_trigger
+namespace: company.team
 
 tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      id: "{{ trigger.key }}"
+
   - id: ship_item
     type: io.kestra.plugin.core.log.Log
     message: |

@@ -1,0 +1,38 @@
+id: kafka_producer
+namespace: company.team
+
+tasks:
+  - id: format
+    type: io.kestra.plugin.core.debug.Return
+    format: |
+      {
+        "order_id": "CLI-123", 
+        "item": "Manual Entry",
+        "customer": "Terminal User"
+      }
+
+  - id: kafka_producer
+    type: io.kestra.plugin.kafka.Produce
+    properties:
+      bootstrap.servers: kafka:29092
+    topic: inbound_orders
+    from: 
+      key: "{{ execution.id }}"
+      value: "{{ outputs.format.value }}"
+      timestamp: "{{ execution.startDate }}"
+      headers:
+        x-header: some value
+    keySerializer: STRING
+    serdeProperties:
+      schema.registry.url: http://localhost:8085
+    valueSerializer: JSON
+
+  - id: kafka_consumer
+    type: io.kestra.plugin.kafka.Consume
+    topic: inbound_orders
+    properties:
+      bootstrap.servers: kafka:29092
+    serdeProperties:
+      schema.registry.url: http://localhost:8085
+    keyDeserializer: STRING
+    valueDeserializer: JSON
