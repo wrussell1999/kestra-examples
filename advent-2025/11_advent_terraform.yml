@@ -29,7 +29,7 @@ tasks:
               }
             }
         commands:
-          - mv terraform/aws-batch/* .
+          - mv infrastructure/terraform/aws-batch/* .
           - terraform init
           - terraform apply -auto-approve
           - terraform output > output.txt
