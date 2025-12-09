@@ -1,4 +1,4 @@
-id: add_tasks_to_todoist
+id: ai_add_tasks
 namespace: company.team
 
 inputs:
@@ -11,7 +11,7 @@ inputs:
 tasks:
   - id: create_task_fields
     type: io.kestra.plugin.deepseek.ChatCompletion
-    apiKey: '{{ kv("DEEPSEEK_API_KEY") }}'
+    apiKey: "{{ secret('DEEPSEEK_API_KEY') }}"
     modelName: deepseek-chat
     messages:
       - type: SYSTEM
@@ -42,7 +42,7 @@ tasks:
 
   - id: create_tasks
     type: io.kestra.plugin.core.flow.ForEach
-    values: "{{ outputs.create_task_fields.response | jq('.tasks') | first }}"
+    values: "{{ outputs.create_task_fields.response | jq('.[].tasks') | first }}"
     tasks:
       - id: create_task
         type: io.kestra.plugin.core.http.Request
@@ -50,7 +50,7 @@ tasks:
         method: POST
         contentType: application/json
         headers:
-          Authorization: "Bearer {{ kv('TODOIST_API_TOKEN') }}"
+          Authorization: "Bearer {{ secret('TODOIST_API_TOKEN') }}"
         body: |
           {
             "content": "{{ taskrun.value | jq('.title') | first }}",
