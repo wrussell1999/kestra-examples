@@ -60,6 +60,7 @@ tasks:
 
   - id: run_python_script
     type: io.kestra.plugin.scripts.python.Script
+    containerImage: python:3.13-slim
     taskRunner:
       type: io.kestra.plugin.ee.aws.runner.Batch
       computeEnvironmentArn: "{{ outputs.parse_tf_output.vars.batch_compute_environment_arn }}"
