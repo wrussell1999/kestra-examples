@@ -1,0 +1,37 @@
+id: 12_advent
+namespace: advent
+
+tasks:
+  - id: set_up_env
+    type: io.kestra.plugin.ansible.cli.AnsibleCLI
+    namespaceFiles:
+      enabled: true
+    taskRunner: 
+      type: io.kestra.plugin.core.runner.Process
+    ansibleConfig: |
+      [defaults]
+      interpreter_python = auto_silent
+      log_path={{ workingDir }}/log
+      callback_plugins = ./callback_plugins
+      stdout_callback = kestra_logger
+    commands:
+      - ansible-playbook -i inventory.ini myplaybook.yml
+
+  - id: loop_hosts
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ outputs.set_up_env.vars.outputs }}"
+    tasks:
+      - id: check_drift
+        type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+        runIf: "{{ taskrun.value | jq('.changed') | first == true }}"
+        url: "{{ kv('SLACK_WEBHOOK') }}"
+        payload: |
+          {
+              "text": "Configuration updated - {{ taskrun.value | jq('.msg') | first ?? Null }}"
+          }
+
+triggers:
+  - id: check_nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 0 3 * * *
+    disabled: true
