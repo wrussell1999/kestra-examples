@@ -1,0 +1,6 @@
+productId,sku,supplierName,supplierAvailable,supplierLeadTimeDays
+P1001,TOOL-SCR-001,Apex Tools Ltd,850,3
+P1002,TOOL-DRL-002,Global Hardware Solutions,120,7
+P1003,TOOL-MEAS-003,MeasureMaster Inc,2000,2
+P1004,SAFETY-GLV-004,SafetyFirst Supplies,5000,1
+P1005,TOOL-MEAS-005,Precision Instruments Co,45,14
