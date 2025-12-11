@@ -1,0 +1,33 @@
+id: load_csv
+namespace: company.team
+
+inputs:
+  - id: file
+    type: FILE
+
+tasks:
+  - id: create_table
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    sql: |
+      CREATE TABLE IF NOT EXISTS suppliers (
+          productId               text,
+          sku                     text,
+          supplierName            text,
+          supplierAvailable       integer,
+          supplierLeadTimeDays    integer
+      );
+
+  - id: copy_in
+    type: io.kestra.plugin.jdbc.postgresql.CopyIn
+    format: CSV
+    from: "{{ inputs.file }}"
+    table: suppliers
+    header: true
+    columns: [productId,sku,supplierName,supplierAvailable,supplierLeadTimeDays]
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.postgresql
+    values:
+      url: jdbc:postgresql://pg_etl:5432/etl
+      username: kestra
+      password: k3str4
