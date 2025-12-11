@@ -1,0 +1,21 @@
+id: read_data
+namespace: company.team
+
+tasks:
+  - id: fetch_supplier_available
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    url: jdbc:postgresql://pg_etl:5432/etl
+    username: kestra
+    password: k3str4
+    sql: |
+      SELECT supplierAvailable 
+      FROM Suppliers;
+    fetchType: FETCH
+
+  - id: foreach
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ outputs.fetch_supplier_available.outputs | jq('.[].rows') | first }}"
+    tasks:
+      - id: log
+        type: io.kestra.plugin.core.log.Log
+        message: "{{ taskrun.value }}"
