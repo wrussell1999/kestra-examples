@@ -2,3 +2,18 @@ id: 16_advent
 namespace: advent
 
 tasks:
+  - id: send_alert
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "channel": "#alerts",
+        "text": "Failure alert for flow {{ flow.namespace }}.{{ flow.id }} with ID {{ execution.id }}"
+      }
+
+triggers:
+  - id: alert_on_failure
+    type: io.kestra.plugin.core.trigger.Flow
+    states:
+      - FAILED
+      - WARNING

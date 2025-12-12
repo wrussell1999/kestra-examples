@@ -2,3 +2,14 @@ id: 15_advent
 namespace: advent
 
 tasks:
+  - id: handle_webhook
+    type: io.kestra.plugin.stripe.webhook.HandleEvent
+    apiKey: "{{ secret('STRIPE_API_KEY') }}"
+    payload: "{{ trigger.payload }}"
+    signatureHeader: "{{ trigger.headers['Stripe-Signature'] }}"
+    endpointSecret: "{{ secret('STRIPE_WEBHOOK_SECRET') }}"
+    
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: 4wjtkzwVGBM9yKnjm3yv8r
