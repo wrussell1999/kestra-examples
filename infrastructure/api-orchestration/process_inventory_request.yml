@@ -93,8 +93,8 @@ tasks:
       - id: fetch_supplier_available
         type: io.kestra.plugin.jdbc.postgresql.Queries
         url: jdbc:postgresql://pg_etl:5432/etl
-        username: kestra
-        password: k3str4
+        username: "{{ secret('POSTGRES_USERNAME') }}"
+        password: "{{ secret('POSTGRES_PASSWORD') }}"
         sql: |
           SELECT supplierAvailable
           FROM Suppliers 
@@ -107,13 +107,11 @@ tasks:
           - kestra
         script: |
           from kestra import Kestra
+          
           data = {{ kv('JSON_INPUT') }}
-
           for item in data['items']:
             if item['productId'] == '{{ json(taskrun.value).productId }}':
-              item['supplierAvailable'] = {{ outputs.fetch_supplier_available[taskrun.value].outputs | jq('.[].row.supplieravailable') | first }}
-          print(data)
-        
+              item['supplierAvailable'] = {{ (outputs.fetch_supplier_available[taskrun.value].outputs | first).row.supplieravailable }}
           Kestra.outputs({"data": data})
 
       - id: update_kv
