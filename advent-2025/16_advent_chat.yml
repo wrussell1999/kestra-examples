@@ -8,12 +8,14 @@ tasks:
     payload: |
       {
         "channel": "#alerts",
-        "text": "Failure alert for flow {{ flow.namespace }}.{{ flow.id }} with ID {{ execution.id }}"
+        "text": "Failure alert for flow {{ trigger.namespace }}.{{ trigger.flowId }} with ID {{ trigger.executionId }}"
       }
 
 triggers:
   - id: alert_on_failure
     type: io.kestra.plugin.core.trigger.Flow
-    states:
-      - FAILED
-      - WARNING
+    conditions:
+      - type: io.kestra.plugin.core.condition.ExecutionStatus
+        in:
+          - FAILED
+          - WARNING
