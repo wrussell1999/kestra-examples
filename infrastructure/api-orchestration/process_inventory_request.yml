@@ -107,12 +107,12 @@ tasks:
           - kestra
         script: |
           from kestra import Kestra
+          
           data = {{ kv('JSON_INPUT') }}
 
           for item in data['items']:
             if item['productId'] == '{{ taskrun.value | jq('.productId') | first }}':
               item['supplierAvailable'] = {{ outputs.fetch_supplier_available[taskrun.value].outputs | jq('.[].row.supplieravailable') | first }}
-          print(data)
         
           Kestra.outputs({"data": data})
 
