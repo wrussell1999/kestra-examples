@@ -1,0 +1,137 @@
+id: process_inventory_request
+namespace: company.team
+
+inputs:
+  - id: inventory_request
+    type: JSON
+    displayName: "Inventory request to be enrichted with supplier data"
+    defaults: |
+      {
+        "totalItems": 5,
+        "page": 1,
+        "limit": 100,
+        "items": [
+          {
+            "id": "INV-1001",
+            "productId": "P1001",
+            "productName": "Industrial Precision Screwdriver Set",
+            "sku": "TOOL-SCR-001",
+            "warehouseId": "WH-MAIN",
+            "warehouseLocation": "A12-B3",
+            "quantityAvailable": 156,
+            "quantityReserved": 24,
+            "reorderLevel": 50,
+            "unitCost": 45.99,
+            "lastUpdated": "2025-04-01T08:30:00Z"
+          },
+          {
+            "id": "INV-1002",
+            "productId": "P1002",
+            "productName": "Heavy Duty Power Drill - 18V",
+            "sku": "TOOL-DRL-002",
+            "warehouseId": "WH-MAIN",
+            "warehouseLocation": "A14-C5",
+            "quantityAvailable": 0,
+            "quantityReserved": 1,
+            "reorderLevel": 30,
+            "unitCost": 129.99,
+            "lastUpdated": "2025-04-01T08:35:00Z"
+          },
+          {
+            "id": "INV-1003",
+            "productId": "P1003",
+            "productName": "Professional Measuring Tape - 5m",
+            "sku": "TOOL-MEAS-003",
+            "warehouseId": "WH-MAIN",
+            "warehouseLocation": "B22-D1",
+            "quantityAvailable": 230,
+            "quantityReserved": 15,
+            "reorderLevel": 75,
+            "unitCost": 18.5,
+            "lastUpdated": "2025-04-01T08:40:00Z"
+          },
+          {
+            "id": "INV-1004",
+            "productId": "P1004",
+            "productName": "Industrial Safety Gloves - Size L",
+            "sku": "SAFETY-GLV-004",
+            "warehouseId": "WH-SUPPLIES",
+            "warehouseLocation": "S05-A3",
+            "quantityAvailable": 342,
+            "quantityReserved": 56,
+            "reorderLevel": 100,
+            "unitCost": 12.75,
+            "lastUpdated": "2025-04-01T09:10:00Z"
+          },
+          {
+            "id": "INV-1005",
+            "productId": "P1005",
+            "productName": "Precision Digital Caliper",
+            "sku": "TOOL-MEAS-005",
+            "warehouseId": "WH-MAIN",
+            "warehouseLocation": "B24-C2",
+            "quantityAvailable": 65,
+            "quantityReserved": 7,
+            "reorderLevel": 25,
+            "unitCost": 89.95,
+            "lastUpdated": "2025-04-01T09:25:00Z"
+          }
+        ]
+      }
+
+tasks:
+  - id: add_to_kv_store
+    type: io.kestra.plugin.core.kv.Set
+    key: JSON_INPUT
+    value: "{{ inputs.inventory_request }}"
+    kvType: JSON
+
+  - id: foreach
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ inputs.inventory_request.items }}"
+    tasks:
+      - id: fetch_supplier_available
+        type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: jdbc:postgresql://pg_etl:5432/etl
+        username: kestra
+        password: k3str4
+        sql: |
+          SELECT supplierAvailable
+          FROM Suppliers 
+          WHERE productId = '{{ taskrun.value | jq('.productId') | first }}';
+        fetchType: FETCH_ONE
+
+      - id: add_to_json
+        type: io.kestra.plugin.scripts.python.Script
+        dependencies:
+          - kestra
+        script: |
+          from kestra import Kestra
+          data = {{ kv('JSON_INPUT') }}
+
+          for item in data['items']:
+            if item['productId'] == '{{ taskrun.value | jq('.productId') | first }}':
+              item['supplierAvailable'] = {{ outputs.fetch_supplier_available[taskrun.value].outputs | jq('.[].row.supplieravailable') | first }}
+          print(data)
+        
+          Kestra.outputs({"data": data})
+
+      - id: update_kv
+        type: io.kestra.plugin.core.kv.Set
+        key: JSON_INPUT
+        value: "{{ outputs.add_to_json[taskrun.value].vars.data }}"
+        kvType: JSON
+
+  - id: get_kv
+    type: io.kestra.plugin.core.kv.Get
+    key: JSON_INPUT
+
+  - id: delete_kv
+    type: io.kestra.plugin.core.kv.Delete
+    key: JSON_INPUT
+
+outputs:
+  - id: final_inventory_request
+    type: JSON
+    displayName: "Inventory request to enrichted with supplier data"
+    value: "{{ outputs.get_kv.value }}"
