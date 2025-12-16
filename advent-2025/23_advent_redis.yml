@@ -1,4 +1,27 @@
 id: 22_advent
 namespace: advent
 
+inputs:
+  - id: values
+    type: JSON
+    description: Enter your favorite plugins and tasks
+    defaults: |
+      [
+        {"dbt": ["build", "test", "snapshot"]},
+        {"aws": ["s3", "sqs", "sns", "athena"]},
+        {"gcp": ["big-query", "gcs", "cloudrun"]}
+      ]
+
 tasks:
+  - id: parallel
+    type: io.kestra.plugin.core.flow.ForEach
+    concurrencyLimit: 0
+    values: "{{ inputs.values }}"
+    tasks:
+      - id: set
+        type: io.kestra.plugin.redis.string.Set
+        url: redis://redis_container:6379/0
+        serdeType: STRING
+        key: "{{ json(taskrun.value) | keys | first }}"
+        value: |
+          {{ taskrun.value | jq('.[]') | first }}
