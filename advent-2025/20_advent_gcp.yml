@@ -1,4 +1,40 @@
 id: 20_advent
 namespace: advent
 
+variables:
+  table: orders_pii
+
 tasks:
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+  - id: transform
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    inputFiles:
+      data.csv: "{{ outputs.extract.uri }}"
+    sql: |
+      CREATE TABLE {{ vars.orders_pii }} AS 
+      SELECT order_id, 
+          hash(customer_name) as customer_name_hash, 
+          md5(customer_email) as customer_email_hash, 
+          product_id, 
+          price, 
+          quantity, 
+          total 
+      FROM read_csv_auto('{{ workingDir }}/data.csv');
+      COPY (SELECT * FROM {{ vars.orders_pii }}) TO '{{ outputFiles.csv }}' (HEADER,
+      DELIMITER ',');
+    outputFiles:
+      - "*.csv"
+
+  - id: load
+    type: io.kestra.plugin.gcp.bigquery.Load
+    from: "{{ outputs.transform.outputFiles.csv }}"
+    serviceAccount: "{{ secret('GOOGLE_SA') }}"
+    projectId: kestra-sandbox
+    destinationTable: kestra-sandbox.stage.orders_pii
+    format: CSV
+    autodetect: true
+    csvOptions:
+      fieldDelimiter: ","
