@@ -1,0 +1,11 @@
+id: subflow_log
+namespace: company.team
+
+inputs:
+  - id: value
+    type: STRING
+
+tasks:
+  - id: hello
+    type: io.kestra.plugin.core.log.Log
+    message: "Hello World - {{ inputs.value }}"
