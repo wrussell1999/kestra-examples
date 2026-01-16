@@ -1,0 +1,30 @@
+id: generate_executions
+namespace: company.team
+
+inputs:
+  - id: size
+    type: INT
+    defaults: 10
+
+tasks:
+  - id: generate_list
+    type: io.kestra.plugin.scripts.python.Script
+    outputFiles:
+      - data.csv
+    script: |
+      import csv
+      data = list(range(0, {{ inputs.size }}))
+
+      with open('data.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        for num in data:
+            writer.writerow([num])
+
+  - id: foreach
+    type: io.kestra.plugin.core.flow.ForEachItem
+    items: "{{ outputs.generate_list.outputFiles['data.csv'] }}"
+    flowId: subflow_log
+    namespace: company.team
+    inputs:
+      value: "{{ taskrun.iteration }}"
+   
