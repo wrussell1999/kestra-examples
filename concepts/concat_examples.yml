@@ -1,0 +1,42 @@
+id: concat_examples
+namespace: company.team
+
+tasks:
+  - id: foreach
+    type: io.kestra.plugin.core.flow.ForEach
+    values: ["value1", "value2", "value3"]
+    tasks:
+      - id: start_api_call
+        type: io.kestra.plugin.scripts.shell.Commands
+        commands:
+          - echo {{ taskrun.value }} > generated
+        outputFiles:
+          - generated
+
+  - id: echo_one
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+    - echo "Hello John" > 1.txt
+    - echo "Hello Jane" > 2.txt
+    - echo "Hello Doe" > 3.txt
+    outputFiles:
+    - "*.txt"
+
+  - id: concat_foreach_manual
+    type: io.kestra.plugin.core.storage.Concat
+    files:
+      - "{{ outputs.start_api_call.value1.outputFiles['generated'] }}"
+      - "{{ outputs.start_api_call.value2.outputFiles['generated'] }}"
+      - "{{ outputs.start_api_call.value3.outputFiles['generated'] }}"
+
+  - id: concat_dynamic_one
+    type: io.kestra.plugin.core.storage.Concat
+    files: "{{ outputs.echo_one.outputFiles | jq('.[]') }}"
+
+  - id: foreach_example
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ outputs.start_api_call | jq('.[].outputFiles.generated') }}"
+    tasks:
+      - id: log
+        type: io.kestra.plugin.core.log.Log
+        message: "{{ taskrun.value }}"
