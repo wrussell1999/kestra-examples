@@ -1,0 +1,46 @@
+id: stale_prs
+namespace: company.team
+
+inputs:
+  - id: cutoff
+    type: INT
+    defaults: 35
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 * * *"
+    inputs:
+      cutoff: 30
+
+tasks:
+  - id: check_stale
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    outputFiles:
+      - stale_prs.csv
+    commands:
+      - python3 find_stale_prs.py --repo kestra-io/kestra --days {{ inputs.cutoff }} --output stale_prs.csv
+
+  - id: notify
+    type: io.kestra.plugin.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    messageText: "Check PRs to be closed - http://localhost:8086/ui/main/executions/company.team/stale_prs/{{execution.id}}/outputs"
+
+  - id: pause
+    type: io.kestra.plugin.core.flow.Pause
+    onResume:
+      - id: numbers
+        description: PR Numbers to be closed
+        type: ARRAY
+        itemType: INT
+
+  - id: close_prs
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    outputFiles:
+      - stale_prs.csv
+    commands:
+      - python3 close_prs.py --repo kestra-io/kestra --numbers "{{ outputs.pause.onResume.numbers }}" --dry-run
