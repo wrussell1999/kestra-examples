@@ -1,0 +1,34 @@
+id: pr_priority
+namespace: company.team
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 * * *"
+    disabled: true
+
+tasks:
+  - id: get_prs
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    env:
+      GITHUB_TOKEN: "{{ kv('GITHUB_ACCESS_TOKEN') }}"
+    outputFiles:
+      - top_kestra_prs.csv
+    commands:
+      - python prioritize_kestra_prs.py --top 10 --output top_kestra_prs.csv
+
+  - id: pick_pr
+    type: io.kestra.plugin.ai.agent.AIAgent
+    prompt: "{{ read(outputs.get_prs.outputFiles['top_kestra_prs.csv'] )}}"
+    systemMessage: "Using this CSV data, write a message with the most important PRs and why. Format a message for Slack. Do not use headers. Use `-` for bullet points. Add links to the PRs."
+    provider:
+      type: io.kestra.plugin.ai.provider.GoogleGemini
+      modelName: gemini-3-flash-preview
+      apiKey: "{{ kv('GEMINI_API_KEY') }}"
+
+  - id: notify_team
+    type: io.kestra.plugin.slack.SlackIncomingWebhook
+    url: "{{ kv('SLACK_WEBHOOK') }}"
+    messageText: "Hey team! \nHere's a quick update on some high-priority PRs that need our attention. These have been flagged due to their age, critical nature (fixes/features), or explicit requests for review/changes, and are generally small/medium in size, making them quicker to process.\n\n{{ outputs.pick_pr.textOutput }}"
