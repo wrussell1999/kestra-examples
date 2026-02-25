@@ -1,14 +1,19 @@
 id: cobol_ai
 namespace: company.team
 
+inputs:
+  - id: prompt
+    type: STRING
+    defaults: "Write me a hello world program in Cobol"
+
 tasks:
   - id: generate_cobol_agent
     type: io.kestra.plugin.ai.agent.AIAgent
-    prompt: "Write me a hello world program in Cobol"
+    prompt: "{{ inputs.prompt }}"
     systemMessage: "Save the Cobol program as `hello.cbl` in the `/tmp` directory by using the provided filesystem tool."
     provider:
       type: io.kestra.plugin.ai.provider.Anthropic
-      apiKey: "{{ kv('ANTHROPIC_API_KEY') }}"
+      apiKey: "{{ secret('ANTHROPIC_API_KEY') }}"
       modelName: claude-sonnet-4-6
     tools:
       - type: io.kestra.plugin.ai.tool.DockerMcpClient
