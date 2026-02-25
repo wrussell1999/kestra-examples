@@ -1,0 +1,37 @@
+id: cobol
+namespace: company.team
+
+tasks:
+  - id: run_cobol
+    type: io.kestra.plugin.scripts.shell.Commands
+    inputFiles:
+      hello.cbl: |
+        000100 IDENTIFICATION DIVISION.
+        000200 PROGRAM-ID. HELLO-WORLD.
+        000300 
+        000400 PROCEDURE DIVISION.
+        000500     DISPLAY 'HELLO FROM KESTRA'.
+        000600     STOP RUN.
+    beforeCommands:
+      - apt update -y 
+      - apt install -y gnucobol
+    commands:
+      - cobc -x hello.cbl
+      - ./hello 
+
+  - id: run_cobol_free
+    type: io.kestra.plugin.scripts.shell.Commands
+    inputFiles:
+      hello.cbl: |
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. HELLO-WORLD.
+        
+        PROCEDURE DIVISION.
+            DISPLAY 'HELLO FROM KESTRA'.
+            STOP RUN.
+    beforeCommands:
+      - apt update -y 
+      - apt install -y gnucobol
+    commands:
+      - cobc -x -free hello.cbl
+      - ./hello
