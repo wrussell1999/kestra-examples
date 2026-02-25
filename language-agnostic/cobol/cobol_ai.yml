@@ -7,10 +7,10 @@ inputs:
     defaults: "Write me a hello world program in Cobol"
 
 tasks:
-  - id: generate_cobol_agent
+  - id: generate_cobol
     type: io.kestra.plugin.ai.agent.AIAgent
     prompt: "{{ inputs.prompt }}"
-    systemMessage: "Save the Cobol program as `hello.cbl` in the `/tmp` directory by using the provided filesystem tool."
+    systemMessage: "Save the Cobol program as `main.cbl` in the `/tmp` directory by using the provided filesystem tool."
     provider:
       type: io.kestra.plugin.ai.provider.Anthropic
       apiKey: "{{ secret('ANTHROPIC_API_KEY') }}"
@@ -21,14 +21,14 @@ tasks:
         command: ["/tmp"]
         binds: ["{{workingDir}}:/tmp"]
     outputFiles:
-      - hello.cbl
+      - main.cbl
 
-  - id: run_cobol_ai
+  - id: run_cobol
     type: io.kestra.plugin.scripts.shell.Commands
-    inputFiles: "{{ outputs.generate_cobol_agent.outputFiles }}"
+    inputFiles: "{{ outputs.generate_cobol.outputFiles }}"
     beforeCommands:
       - apt update -y 
       - apt install -y gnucobol
     commands:
-      - cobc -x hello.cbl
-      - ./hello 
+      - cobc -x main.cbl
+      - ./main 
