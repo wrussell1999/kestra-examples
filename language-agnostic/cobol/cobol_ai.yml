@@ -27,8 +27,8 @@ tasks:
     type: io.kestra.plugin.scripts.shell.Commands
     inputFiles: "{{ outputs.generate_cobol.outputFiles }}"
     beforeCommands:
-      - apt update -y 
+      - apt update -y
       - apt install -y gnucobol
     commands:
       - cobc -x main.cbl
-      - ./main 
+      - ./main
