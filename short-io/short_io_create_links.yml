@@ -39,7 +39,6 @@ tasks:
     labels:
       - key: release
         value: "{{ inputs.release_number }}"
-    
 
   - id: foreach
     type: io.kestra.plugin.core.flow.ForEach
