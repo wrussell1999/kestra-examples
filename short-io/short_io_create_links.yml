@@ -1,13 +1,15 @@
 id: create_links
-namespace: company.team
+namespace: kestra.product
 
 inputs:
   - id: release_number
     type: STRING
-    defaults: "0-23"
+    description: "Format should follow `0-24` or `1-0`"
+    defaults: "1-2"
   
   - id: platforms
     type: JSON
+    description: Leave blank to use default structure
     defaults: |
       [{
           "slack": "slack"
@@ -32,6 +34,13 @@ inputs:
        }]
 
 tasks:
+  - id: add_label
+    type: io.kestra.core.tasks.executions.Labels
+    labels:
+      - key: release
+        value: "{{ inputs.release_number }}"
+    
+
   - id: foreach
     type: io.kestra.plugin.core.flow.ForEach
     values: "{{ inputs.platforms }}"
