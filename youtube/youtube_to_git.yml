@@ -1,0 +1,156 @@
+id: youtube_to_git
+namespace: kestra.product
+
+variables:
+  github_repo: kestra-io/docs
+
+tasks:
+  - id: fetch_videos
+    type: io.kestra.plugin.core.http.Request
+    uri: "https://www.googleapis.com/youtube/v3/search?key={{ secret('YOUTUBE_API_KEY') }}&channelId=UCMCsjAEnJXzGsg_IAZF8WHQ&part=snippet,id&order=date&maxResults=1"
+
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone_repo
+        type: io.kestra.plugin.git.Clone
+        url: "https://github.com/{{ vars.github_repo }}"
+        branch: main
+
+      - id: create_yaml_file
+        type: io.kestra.plugin.scripts.python.Script
+        dependencies:
+          - kestra
+          - ruamel.yaml
+        script: |
+          from kestra import Kestra
+          from datetime import datetime
+          from pathlib import Path
+          from ruamel.yaml import YAML
+          from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+
+          def find_tutorial_videos_dir() -> Path:
+              tutorial_videos_dir = Path.cwd() / "src" / "contents" / "tutorial-videos"
+
+              if tutorial_videos_dir.exists():
+                  return tutorial_videos_dir
+
+              raise FileNotFoundError(
+                  f"Could not find tutorial videos directory at {tutorial_videos_dir}"
+              )
+
+
+          def next_video_file_path(tutorial_videos_dir: Path) -> Path:
+              existing_numbers = []
+
+              for path in tutorial_videos_dir.glob("*.yaml"):
+                  try:
+                      existing_numbers.append(int(path.stem))
+                  except ValueError:
+                      continue
+
+              next_number = max(existing_numbers, default=0) + 1
+              return tutorial_videos_dir / f"{next_number}.yaml"
+
+
+          def latest_video_file_path(tutorial_videos_dir: Path) -> Path | None:
+              existing_numbers = []
+
+              for path in tutorial_videos_dir.glob("*.yaml"):
+                  try:
+                      existing_numbers.append((int(path.stem), path))
+                  except ValueError:
+                      continue
+
+              if not existing_numbers:
+                  return None
+
+              return max(existing_numbers, key=lambda item: item[0])[1]
+
+
+          raw_yt = {{ outputs.fetch_videos.body }}
+          last_video = raw_yt["items"][0]
+
+          date_object = datetime.strptime(
+              last_video["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"
+          )
+
+          video = {
+              "title": DoubleQuotedScalarString(last_video["snippet"]["title"]),
+              "description": DoubleQuotedScalarString(last_video["snippet"]["description"]),
+              "category": DoubleQuotedScalarString("Feature Highlight"),
+              "author": DoubleQuotedScalarString("Kestra"),
+              "url": DoubleQuotedScalarString(
+                  f"https://youtube.com/watch?v={last_video['id']['videoId']}"
+              ),
+              "publicationDate": DoubleQuotedScalarString(
+                  date_object.strftime("%Y-%m-%dT00:00:00.000")
+              ),
+              "contentType": DoubleQuotedScalarString("Feature Highlight"),
+          }
+
+          yaml = YAML()
+          yaml.default_flow_style = False
+          yaml.preserve_quotes = True
+
+          tutorial_videos_dir = find_tutorial_videos_dir()
+          latest_video_path = latest_video_file_path(tutorial_videos_dir)
+          latest_video_url = None
+
+          if latest_video_path is not None:
+              with open(latest_video_path, "r", encoding="utf-8") as file:
+                  latest_video_yaml = yaml.load(file) or {}
+                  latest_video_url = latest_video_yaml.get("url")
+
+          if latest_video_url == str(video["url"]):
+              Kestra.outputs(
+                  {"title": video["title"], "url": video["url"], "created_file": False}
+              )
+              raise SystemExit(0)
+
+          output_path = next_video_file_path(tutorial_videos_dir)
+
+          with open(output_path, "w", encoding="utf-8") as file:
+              yaml.dump(video, file)
+
+          Kestra.outputs(
+              {"title": video["title"], "url": video["url"], "created_file": True}
+          )
+
+      - id: commit
+        type: io.kestra.plugin.scripts.shell.Commands
+        runIf: "{{ outputs.create_yaml_file.vars.created_file }}"
+        containerImage: alpine/git
+        commands:
+          - git config --global --add safe.directory {{ outputs.clone_repo.directory }}
+          - git config user.email "wrussell@kestra.io"
+          - git config user.name "Will Russell"
+          - git remote set-url origin "https://x-access-token:{{secret('GITHUB_ACCESS_TOKEN')}}@github.com/{{vars.github_repo}}.git"
+          - git checkout -b new-video-{{ execution.id }}
+          - git add src/contents/tutorial-videos
+          - 'git commit -m "feat(video): {{ outputs.create_yaml_file.vars.title }}"'
+          - git push origin new-video-{{ execution.id }}
+
+      - id: create_pull_request
+        type: io.kestra.plugin.github.pulls.Create
+        runIf: "{{ outputs.create_yaml_file.vars.created_file }}"
+        oauthToken: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+        repository: "{{ vars.github_repo }}"
+        sourceBranch: new-video-{{ execution.id }}
+        targetBranch: main
+        reviewers:
+          - "akeller"
+          - "aj-emerich"
+        title: "feat(video): {{ outputs.create_yaml_file.vars.title }}"
+        body: "This PR adds a new YouTube video to the website. \n\nVideo URL: {{ outputs.create_yaml_file.vars.url }}"
+
+      - id: notify_slack
+        type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
+        runIf: "{{ outputs.create_yaml_file.vars.created_file }}"
+        url: "{{ secret('SLACK_WEBHOOK') }}"
+        messageText: "A new YouTube video has been added! Check out the PR: {{ outputs.create_pull_request.pullRequestUrl }}"
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 * * *"
