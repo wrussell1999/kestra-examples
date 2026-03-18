@@ -1,0 +1,125 @@
+id: youtube_to_git
+namespace: kestra.product
+
+variables:
+  github_repo: kestra-io/docs
+  yt_channel_id: UCMCsjAEnJXzGsg_IAZF8WHQ
+
+tasks:
+  - id: wdir
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clone_repo
+        type: io.kestra.plugin.git.Clone
+        url: "https://github.com/{{ vars.github_repo }}"
+        branch: main
+
+      - id: create_yaml_file
+        type: io.kestra.plugin.scripts.python.Script
+        dependencies:
+          - kestra
+          - ruamel.yaml
+        script: |
+          from kestra import Kestra
+          from datetime import datetime
+          from pathlib import Path
+          from ruamel.yaml import YAML
+          from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+
+          def find_tutorial_videos_dir() -> Path:
+              tutorial_videos_dir = Path.cwd() / "src" / "contents" / "tutorial-videos"
+
+              if tutorial_videos_dir.exists():
+                  return tutorial_videos_dir
+
+              raise FileNotFoundError(
+                  f"Could not find tutorial videos directory at {tutorial_videos_dir}"
+              )
+
+
+          def next_video_file_path(tutorial_videos_dir: Path) -> Path:
+              existing_numbers = []
+
+              for path in tutorial_videos_dir.glob("*.yaml"):
+                  try:
+                      existing_numbers.append(int(path.stem))
+                  except ValueError:
+                      continue
+
+              next_number = max(existing_numbers, default=0) + 1
+              return tutorial_videos_dir / f"{next_number}.yaml"
+
+
+          title = "{{ trigger.title }}"
+          description = "{{ trigger.description }}"
+          video_url = "{{ trigger.videoUrl }}"
+          published_at = "{{ trigger.publishedAt }}"
+
+          date_object = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
+
+          video = {
+              "title": DoubleQuotedScalarString(title),
+              "description": DoubleQuotedScalarString(description),
+              "category": DoubleQuotedScalarString("Feature Highlight"),
+              "author": DoubleQuotedScalarString("Kestra"),
+              "url": DoubleQuotedScalarString(video_url),
+              "publicationDate": DoubleQuotedScalarString(
+                  date_object.strftime("%Y-%m-%dT00:00:00.000")
+              ),
+              "contentType": DoubleQuotedScalarString("Feature Highlight"),
+          }
+
+          yaml = YAML()
+          yaml.default_flow_style = False
+          yaml.preserve_quotes = True
+
+          tutorial_videos_dir = find_tutorial_videos_dir()
+          output_path = next_video_file_path(tutorial_videos_dir)
+
+          with open(output_path, "w", encoding="utf-8") as file:
+              yaml.dump(video, file)
+
+          Kestra.outputs(
+              {
+                  "title": title,
+                  "url": video_url
+              }
+          )
+
+      - id: commit
+        type: io.kestra.plugin.scripts.shell.Commands
+        containerImage: alpine/git
+        commands:
+          - git config --global --add safe.directory {{ outputs.clone_repo.directory }}
+          - git config user.email "wrussell@kestra.io"
+          - git config user.name "Will Russell"
+          - git remote set-url origin "https://x-access-token:{{secret('GITHUB_ACCESS_TOKEN')}}@github.com/{{vars.github_repo}}.git"
+          - git checkout -b new-video-{{ execution.id }}
+          - git add src/contents/tutorial-videos
+          - 'git commit -m "feat(video): {{ outputs.create_yaml_file.vars.title }}"'
+          - git push origin new-video-{{ execution.id }}
+
+      - id: create_pull_request
+        type: io.kestra.plugin.github.pulls.Create
+        oauthToken: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+        repository: "{{ vars.github_repo }}"
+        sourceBranch: new-video-{{ execution.id }}
+        targetBranch: main
+        reviewers:
+          - "akeller"
+          - "aj-emerich"
+        title: "feat(video): {{ outputs.create_yaml_file.vars.title }}"
+        body: "This PR adds a new YouTube video to the website. \n\nVideo URL: {{ outputs.create_yaml_file.vars.url }}"
+
+      - id: notify_slack
+        type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
+        url: "{{ secret('SLACK_WEBHOOK') }}"
+        messageText: "A new YouTube video has been added! Check out the PR: {{ outputs.create_pull_request.pullRequestUrl }}"
+
+triggers:
+  - id: new_video_trigger
+    type: io.kestra.plugin.youtube.VideoTrigger
+    accessToken: "{{ secret('YOUTUBE_ACCESS_TOKEN') }}"
+    channelId: "{{ vars.yt_channel_id }}"
+    interval: PT24H
+    maxResults: 1
