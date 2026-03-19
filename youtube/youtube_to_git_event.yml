@@ -1,4 +1,4 @@
-id: youtube_to_git
+id: youtube_to_docs
 namespace: kestra.product
 
 variables:
@@ -6,9 +6,29 @@ variables:
   yt_channel_id: UCMCsjAEnJXzGsg_IAZF8WHQ
 
 tasks:
+  - id: get_category
+    type: io.kestra.plugin.ai.agent.AIAgent
+    prompt: "{{ trigger.title }}"
+    systemMessage: "Using the title of the YouTube video, determine what category it should fall into out of these 3. Feature Highlight, Quick Start Tutorials, Deep Dive Tutorials. Return the category only."
+    provider: 
+      type: io.kestra.plugin.ai.provider.GoogleGemini
+      modelName: gemini-3-flash-preview
+      apiKey: "{{ secret('GEMINI_API_KEY') }}"
+    configuration:
+      responseFormat:
+        type: JSON
+        jsonSchema:
+          type: object
+          required: ["category"]
+          properties:
+            category:
+              type: string
+              enum: ["Feature Highlight", "Quick Start Tutorials", "Deep Dive Tutorials",]
+  
   - id: wdir
     type: io.kestra.plugin.core.flow.WorkingDirectory
     tasks:
+
       - id: clone_repo
         type: io.kestra.plugin.git.Clone
         url: "https://github.com/{{ vars.github_repo }}"
@@ -51,7 +71,7 @@ tasks:
 
 
           title = "{{ trigger.title }}"
-          description = "{{ trigger.description }}"
+          description = """{{ trigger.description }}"""
           video_url = "{{ trigger.videoUrl }}"
           published_at = "{{ trigger.publishedAt }}"
 
@@ -60,13 +80,13 @@ tasks:
           video = {
               "title": DoubleQuotedScalarString(title),
               "description": DoubleQuotedScalarString(description),
-              "category": DoubleQuotedScalarString("Feature Highlight"),
+              "category": DoubleQuotedScalarString("{{ outputs.get_category.jsonOutput.category }}"),
               "author": DoubleQuotedScalarString("Kestra"),
               "url": DoubleQuotedScalarString(video_url),
               "publicationDate": DoubleQuotedScalarString(
                   date_object.strftime("%Y-%m-%dT00:00:00.000")
               ),
-              "contentType": DoubleQuotedScalarString("Feature Highlight"),
+              "contentType": DoubleQuotedScalarString("{{ outputs.get_category.jsonOutput.category }}"),
           }
 
           yaml = YAML()
@@ -119,7 +139,7 @@ tasks:
 triggers:
   - id: new_video_trigger
     type: io.kestra.plugin.youtube.VideoTrigger
-    accessToken: "{{ secret('YOUTUBE_ACCESS_TOKEN') }}"
+    accessToken: "{{ credential('youtube-auth') }}"
     channelId: "{{ vars.yt_channel_id }}"
     interval: PT24H
     maxResults: 1
