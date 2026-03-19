@@ -150,6 +150,10 @@ tasks:
         url: "{{ secret('SLACK_WEBHOOK') }}"
         messageText: "A new YouTube video has been added! Check out the PR: {{ outputs.create_pull_request.pullRequestUrl }}"
 
+afterExecution:
+  - id: purge_execution_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
 triggers:
   - id: daily
     type: io.kestra.plugin.core.trigger.Schedule
