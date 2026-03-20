@@ -28,7 +28,6 @@ tasks:
   - id: wdir
     type: io.kestra.plugin.core.flow.WorkingDirectory
     tasks:
-
       - id: clone_repo
         type: io.kestra.plugin.git.Clone
         url: "https://github.com/{{ vars.github_repo }}"
@@ -56,7 +55,6 @@ tasks:
                   f"Could not find tutorial videos directory at {tutorial_videos_dir}"
               )
 
-
           def next_video_file_path(tutorial_videos_dir: Path) -> Path:
               existing_numbers = []
 
@@ -68,7 +66,6 @@ tasks:
 
               next_number = max(existing_numbers, default=0) + 1
               return tutorial_videos_dir / f"{next_number}.yaml"
-
 
           title = "{{ trigger.title }}"
           description = """{{ trigger.description }}"""
