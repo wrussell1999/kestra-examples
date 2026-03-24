@@ -65,19 +65,16 @@ tasks:
               next_number = max(existing_numbers, default=0) + 1
               return tutorial_videos_dir / f"{next_number}.yaml"
 
-          title = "{{ trigger.title }}"
-          description = """{{ trigger.description }}"""
-          video_url = "{{ trigger.videoUrl }}"
           published_at = "{{ trigger.publishedAt }}"
 
           date_object = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
 
           video = {
-              "title": DoubleQuotedScalarString(title),
-              "description": DoubleQuotedScalarString(description),
+              "title": DoubleQuotedScalarString("{{ trigger.title }}"),
+              "description": DoubleQuotedScalarString("""{{ trigger.description }}"""),
               "category": DoubleQuotedScalarString("{{ outputs.get_category.jsonOutput.category }}"),
               "author": DoubleQuotedScalarString("Kestra"),
-              "url": DoubleQuotedScalarString(video_url),
+              "url": DoubleQuotedScalarString("{{ trigger.videoUrl }}"),
               "publicationDate": DoubleQuotedScalarString(
                   date_object.strftime("%Y-%m-%dT00:00:00.000")
               ),
@@ -104,7 +101,7 @@ tasks:
           - git remote set-url origin "https://x-access-token:{{secret('GITHUB_ACCESS_TOKEN')}}@github.com/{{vars.github_repo}}.git"
           - git checkout -b new-video-{{ execution.id }}
           - git add src/contents/tutorial-videos
-          - 'git commit -m "feat(video): {{ outputs.create_yaml_file.vars.title }}"'
+          - 'git commit -m "feat(video): {{ trigger.title }}"'
           - git push origin new-video-{{ execution.id }}
 
       - id: create_pull_request
