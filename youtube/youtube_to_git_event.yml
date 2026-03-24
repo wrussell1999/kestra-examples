@@ -138,5 +138,5 @@ triggers:
     type: io.kestra.plugin.youtube.VideoTrigger
     accessToken: "{{ credential('youtube-auth') }}"
     channelId: "{{ vars.yt_channel_id }}"
-    interval: PT24H
+    interval: PT1H
     maxResults: 1
