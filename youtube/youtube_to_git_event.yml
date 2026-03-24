@@ -36,10 +36,8 @@ tasks:
       - id: create_yaml_file
         type: io.kestra.plugin.scripts.python.Script
         dependencies:
-          - kestra
           - ruamel.yaml
         script: |
-          from kestra import Kestra
           from datetime import datetime
           from pathlib import Path
           from ruamel.yaml import YAML
@@ -96,13 +94,6 @@ tasks:
           with open(output_path, "w", encoding="utf-8") as file:
               yaml.dump(video, file)
 
-          Kestra.outputs(
-              {
-                  "title": title,
-                  "url": video_url
-              }
-          )
-
       - id: commit
         type: io.kestra.plugin.scripts.shell.Commands
         containerImage: alpine/git
@@ -125,8 +116,8 @@ tasks:
         reviewers:
           - "akeller"
           - "aj-emerich"
-        title: "feat(video): {{ outputs.create_yaml_file.vars.title }}"
-        body: "This PR adds a new YouTube video to the website. \n\nVideo URL: {{ outputs.create_yaml_file.vars.url }}"
+        title: "feat(video): {{ trigger.title }}"
+        body: "This PR adds a new YouTube video to the website. \n\nVideo URL: {{ trigger.videoUrl }}"
 
       - id: notify_slack
         type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
