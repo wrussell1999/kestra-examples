@@ -32,6 +32,11 @@ tasks:
                   type: string
                   enum: ["Feature Highlight", "Quick Start Tutorials", "Deep Dive Tutorials",]
 
+      - id: clean_title
+        type: io.kestra.plugin.ai.agent.AIAgent
+        prompt: "{{ trigger.title }}"
+        systemMessage: "Clean the title of this video. It should fix any weird formatting introduced. Return only the newly updated title."
+
       - id: clean_description
         type: io.kestra.plugin.ai.agent.AIAgent
         prompt: "{{ trigger.description }}"
@@ -82,7 +87,7 @@ tasks:
           date_object = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
 
           video = {
-              "title": DoubleQuotedScalarString("{{ trigger.title }}"),
+              "title": DoubleQuotedScalarString("{{ outputs.clean_title.textOutput }}"),
               "description": DoubleQuotedScalarString("""{{ outputs.clean_description.textOutput }}"""),
               "category": DoubleQuotedScalarString("{{ outputs.get_category.jsonOutput.category }}"),
               "author": DoubleQuotedScalarString("Kestra"),
@@ -113,7 +118,7 @@ tasks:
           - git remote set-url origin "https://x-access-token:{{secret('GITHUB_ACCESS_TOKEN')}}@github.com/{{vars.github_repo}}.git"
           - git checkout -b new-video-{{ execution.id }}
           - git add src/contents/tutorial-videos
-          - 'git commit -m "feat(video): {{ trigger.title }}"'
+          - 'git commit -m "feat(video): {{ outputs.clean_title.textOutput }}"'
           - git push origin new-video-{{ execution.id }}
 
       - id: create_pull_request
@@ -125,7 +130,7 @@ tasks:
         reviewers:
           - "akeller"
           - "aj-emerich"
-        title: "feat(video): {{ trigger.title }}"
+        title: "feat(video): {{ outputs.clean_title.textOutput }}"
         body: "This PR adds a new YouTube video to the website. \n\nVideo URL: {{ trigger.videoUrl }}"
 
       - id: notify_slack
