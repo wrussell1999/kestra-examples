@@ -5,6 +5,14 @@ variables:
   github_repo: kestra-io/docs
   yt_channel_id: UCMCsjAEnJXzGsg_IAZF8WHQ
 
+triggers:
+  - id: new_video_trigger
+    type: io.kestra.plugin.youtube.VideoTrigger
+    accessToken: "{{ credential('youtube-auth') }}"
+    channelId: "{{ vars.yt_channel_id }}"
+    interval: PT1H
+    maxResults: 1
+
 tasks:
   - id: ai_clean_up
     type: io.kestra.plugin.core.flow.Parallel
@@ -13,10 +21,6 @@ tasks:
         type: io.kestra.plugin.ai.agent.AIAgent
         prompt: "{{ trigger.title }}"
         systemMessage: "Using the title of the YouTube video, determine what category it should fall into out of these 3. Feature Highlight, Quick Start Tutorials, Deep Dive Tutorials. Return the category only."
-        provider: 
-          type: io.kestra.plugin.ai.provider.GoogleGemini
-          modelName: gemini-3-flash-preview
-          apiKey: "{{ secret('GEMINI_API_KEY') }}"
         configuration:
           responseFormat:
             type: JSON
@@ -32,10 +36,6 @@ tasks:
         type: io.kestra.plugin.ai.agent.AIAgent
         prompt: "{{ trigger.description }}"
         systemMessage: "Clean the description of this video to only include a sentence or two. It should fix any weird formatting so it's just one line. Return only the newly updated description."
-        provider:
-          type: io.kestra.plugin.ai.provider.GoogleGemini
-          modelName: gemini-3-flash-preview
-          apiKey: "{{ secret('GEMINI_API_KEY') }}"
       
   - id: wdir
     type: io.kestra.plugin.core.flow.WorkingDirectory
@@ -133,10 +133,10 @@ tasks:
         url: "{{ secret('SLACK_WEBHOOK') }}"
         messageText: "A new YouTube video is ready to be added to the website: {{ trigger.videoUrl }}. Check out the PR: {{ outputs.create_pull_request.pullRequestUrl }}"
 
-triggers:
-  - id: new_video_trigger
-    type: io.kestra.plugin.youtube.VideoTrigger
-    accessToken: "{{ credential('youtube-auth') }}"
-    channelId: "{{ vars.yt_channel_id }}"
-    interval: PT1H
-    maxResults: 1
+pluginDefaults:
+  - type: io.kestra.plugin.ai.agent.AIAgent
+    values:
+      provider: 
+        type: io.kestra.plugin.ai.provider.GoogleGemini
+        modelName: gemini-3-flash-preview
+        apiKey: "{{ secret('GEMINI_API_KEY') }}"
