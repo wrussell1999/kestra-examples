@@ -6,25 +6,37 @@ variables:
   yt_channel_id: UCMCsjAEnJXzGsg_IAZF8WHQ
 
 tasks:
-  - id: get_category
-    type: io.kestra.plugin.ai.agent.AIAgent
-    prompt: "{{ trigger.title }}"
-    systemMessage: "Using the title of the YouTube video, determine what category it should fall into out of these 3. Feature Highlight, Quick Start Tutorials, Deep Dive Tutorials. Return the category only."
-    provider: 
-      type: io.kestra.plugin.ai.provider.GoogleGemini
-      modelName: gemini-3-flash-preview
-      apiKey: "{{ secret('GEMINI_API_KEY') }}"
-    configuration:
-      responseFormat:
-        type: JSON
-        jsonSchema:
-          type: object
-          required: ["category"]
-          properties:
-            category:
-              type: string
-              enum: ["Feature Highlight", "Quick Start Tutorials", "Deep Dive Tutorials",]
-  
+  - id: ai_clean_up
+    type: io.kestra.plugin.core.flow.Parallel
+    tasks: 
+      - id: get_category
+        type: io.kestra.plugin.ai.agent.AIAgent
+        prompt: "{{ trigger.title }}"
+        systemMessage: "Using the title of the YouTube video, determine what category it should fall into out of these 3. Feature Highlight, Quick Start Tutorials, Deep Dive Tutorials. Return the category only."
+        provider: 
+          type: io.kestra.plugin.ai.provider.GoogleGemini
+          modelName: gemini-3-flash-preview
+          apiKey: "{{ secret('GEMINI_API_KEY') }}"
+        configuration:
+          responseFormat:
+            type: JSON
+            jsonSchema:
+              type: object
+              required: ["category"]
+              properties:
+                category:
+                  type: string
+                  enum: ["Feature Highlight", "Quick Start Tutorials", "Deep Dive Tutorials",]
+
+      - id: clean_description
+        type: io.kestra.plugin.ai.agent.AIAgent
+        prompt: "{{ trigger.description }}"
+        systemMessage: "Clean the description of this video to only include a sentence or two. It should fix any weird formatting so it's just one line. Return only the newly updated description."
+        provider:
+          type: io.kestra.plugin.ai.provider.GoogleGemini
+          modelName: gemini-3-flash-preview
+          apiKey: "{{ secret('GEMINI_API_KEY') }}"
+      
   - id: wdir
     type: io.kestra.plugin.core.flow.WorkingDirectory
     tasks:
@@ -71,7 +83,7 @@ tasks:
 
           video = {
               "title": DoubleQuotedScalarString("{{ trigger.title }}"),
-              "description": DoubleQuotedScalarString("""{{ trigger.description }}"""),
+              "description": DoubleQuotedScalarString("""{{ outputs.clean_description.textOutput }}"""),
               "category": DoubleQuotedScalarString("{{ outputs.get_category.jsonOutput.category }}"),
               "author": DoubleQuotedScalarString("Kestra"),
               "url": DoubleQuotedScalarString("{{ trigger.videoUrl }}"),
@@ -119,7 +131,7 @@ tasks:
       - id: notify_slack
         type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
         url: "{{ secret('SLACK_WEBHOOK') }}"
-        messageText: "A new YouTube video has been added! Check out the PR: {{ outputs.create_pull_request.pullRequestUrl }}"
+        messageText: "A new YouTube video is ready to be added to the website: {{ trigger.videoUrl }}. Check out the PR: {{ outputs.create_pull_request.pullRequestUrl }}"
 
 triggers:
   - id: new_video_trigger
