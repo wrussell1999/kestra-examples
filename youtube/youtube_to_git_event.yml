@@ -13,7 +13,21 @@ triggers:
     interval: PT1H
     maxResults: 1
 
+sla:
+  - id: max_duration
+    type: MAX_DURATION
+    duration: PT1H
+    behavior: CANCEL
+    labels:
+      sla: miss
+      reason: durationExceeded
+
 tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      video: "{{ trigger.title }}"
+
   - id: ai_clean_up
     type: io.kestra.plugin.core.flow.Parallel
     tasks: 
@@ -35,7 +49,7 @@ tasks:
       - id: clean_title
         type: io.kestra.plugin.ai.agent.AIAgent
         prompt: "{{ trigger.title }}"
-        systemMessage: "Clean the title of this video. It should fix any weird formatting introduced. Return only the newly updated title."
+        systemMessage: "Fix the formatting of this title. Do not change the title, just remove any weird punctuation and formatting. Return only fixed title."
 
       - id: clean_description
         type: io.kestra.plugin.ai.agent.AIAgent
