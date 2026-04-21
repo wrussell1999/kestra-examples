@@ -1,0 +1,85 @@
+id: workflow_vs_dag
+namespace: company.team
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "@daily"
+    conditions:
+      - type: io.kestra.plugin.core.condition.Not
+        conditions:
+          - type: io.kestra.plugin.core.condition.PublicHoliday
+            country: GB
+          - type: io.kestra.plugin.core.condition.Weekend
+    disabled: true
+
+sla:
+  - id: max_duration
+    type: MAX_DURATION
+    duration: PT1H
+    behavior: CANCEL
+    labels:
+      sla: miss
+      reason: durationExceeded
+
+inputs:
+  - id: uri
+    type: URI
+    defaults: https://dummyjson.com/products
+
+  - id: columns_to_keep
+    type: ARRAY
+    itemType: STRING
+    defaults:
+      - brand
+      - price
+
+tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      id: "{{ inputs.uri }}"
+
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: "{{ inputs.uri }}"
+
+  - id: transform
+    type: io.kestra.plugin.scripts.python.Commands
+    containerImage: python:3.11-alpine
+    namespaceFiles:
+      enabled: true
+    timeout: PT10M
+    retry:
+      type: constant
+      maxAttempts: 5
+      interval: PT15M
+
+    inputFiles:
+      data.json: "{{ outputs.extract.uri }}"
+    outputFiles:
+      - "*.json"
+    env:
+      COLUMNS_TO_KEEP: "{{ inputs.columns_to_keep }}"
+    commands:
+      - python transform.py
+    
+  - id: query
+    type: io.kestra.plugin.jdbc.duckdb.Queries
+    description: Aggregate the cleaned data with DuckDB and store the result.
+    inputFiles:
+      products.json: "{{ outputs.transform.outputFiles['products.json'] }}"
+    sql: |
+      INSTALL json;
+      LOAD json;
+      SELECT brand, round(avg(price), 2) as avg_price
+      FROM read_json_auto('{{ workingDir }}/products.json')
+      GROUP BY brand
+      ORDER BY avg_price DESC;
+    fetchType: STORE
+
+errors:
+  - id: notify
+    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    messageText: "{{ flow.id }} failed on execution {{ execution.id }}"
