@@ -1,0 +1,30 @@
+id: ai_flow
+namespace: company.team
+
+inputs:
+  - id: uri_input
+    type: URI
+    description: The URI passed to the Python script as an environment variable.
+
+tasks:
+  - id: run_python
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+      include:
+        - process.py
+    env:
+      URI: "{{ inputs.uri_input }}"
+    commands:
+      - python process.py
+
+triggers:
+  - id: hourly_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "@hourly"
+
+errors:
+  - id: slack_alert
+    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    messageText: "Execution {{ execution.id }} of flow {{ flow.id }} failed in namespace {{ flow.namespace }}."

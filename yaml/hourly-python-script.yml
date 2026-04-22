@@ -1,0 +1,36 @@
+# Namespace: update to match your target namespace
+# Slack webhook URL: store as a secret named SLACK_WEBHOOK_URL
+# process.py must be uploaded as a namespace file in the same namespace
+
+id: hourly_python_script
+namespace: company.team
+
+inputs:
+  - id: uri
+    type: STRING
+    description: "URI passed to process.py via the URI environment variable"
+
+tasks:
+  - id: run_script
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+      include:
+        - process.py
+    commands:
+      - python process.py
+    env:
+      URI: "{{ inputs.uri }}"
+
+errors:
+  - id: notify_slack
+    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK_URL') }}"
+    messageText: ":red_circle: Flow *{{ flow.id }}* failed in namespace *{{ flow.namespace }}*.\nExecution ID: {{ execution.id }}\nError: {{ execution.state.current }}"
+
+triggers:
+  - id: every_hour
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 * * * *"
+    inputs:
+      uri: "https://your-default-uri-here"
