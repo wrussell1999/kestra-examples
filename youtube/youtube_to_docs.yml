@@ -142,7 +142,6 @@ tasks:
         sourceBranch: new-video-{{ execution.id }}
         targetBranch: main
         reviewers:
-          - "akeller"
           - "aj-emerich"
         title: "feat(video): {{ outputs.clean_title.textOutput }}"
         body: "This PR adds a new YouTube video to the website. \n\nVideo URL: {{ trigger.videoUrl }}"
