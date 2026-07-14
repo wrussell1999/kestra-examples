@@ -1,0 +1,125 @@
+id: collect_ai_predictions
+namespace: worldcup
+
+variables:
+  system_prompt: >-
+    You are a precise football analyst predicting the FIFA World Cup 2026 for the teams remaining; the next stage is the quarter-finals.
+    Teams remaining are France, Morocco, Spain, Belgium, Norway, England, Argentina, and Switzerland.
+    Every statistic you are given comes from matches played before the quarter-finals.
+    Pick the overall tournament winner ONLY from the 8 teams still in the quarter-finals.
+    Never pick a team that has been eliminated or that does not appear in the provided data.
+    Respond with valid JSON only and no other text, using the keys champion (the team name) and reasoning (two or three sentences on why they win it all).
+
+tasks:
+  - id: fetch_finished
+    type: io.kestra.plugin.core.http.Request
+    uri: "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ secret('FOOTBALL_API_KEY') }}"
+
+  - id: fetch_qf
+    type: io.kestra.plugin.core.http.Request
+    uri: "https://api.football-data.org/v4/competitions/WC/matches?stage=QUARTER_FINALS"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ secret('FOOTBALL_API_KEY') }}"
+
+  - id: fetch_scorers
+    type: io.kestra.plugin.core.http.Request
+    uri: "https://api.football-data.org/v4/competitions/WC/scorers?limit=30"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ secret('FOOTBALL_API_KEY') }}"
+
+  - id: process_stats
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    beforeCommands:
+      - pip install kestra
+    env:
+      FINISHED_JSON: "{{ outputs.fetch_finished.body }}"
+      QF_JSON: "{{ outputs.fetch_qf.body }}"
+      SCORERS_JSON: "{{ outputs.fetch_scorers.body }}"
+    commands:
+      - python process_stats.py
+
+  - id: run_predictions
+    type: io.kestra.plugin.core.flow.Parallel
+    runIf: "{{ outputs.process_stats.vars.has_qf == 'true' }}"
+    tasks:
+      - id: openai_branch
+        type: io.kestra.plugin.core.flow.Sequential
+        tasks:
+          - id: openai
+            type: io.kestra.plugin.openai.Responses
+            apiKey: "{{ secret('OPENAI_API_KEY') }}"
+            model: gpt-5.4-mini
+            input:
+              - role: user
+                content:
+                  - type: input_text
+                    text: "{{ outputs.process_stats.vars.prompt_escaped }}"
+              - role: system
+                content:
+                  - type: input_text
+                    text: "{{ vars.system_prompt }}"
+          - id: save_openai
+            type: io.kestra.plugin.core.kv.Set
+            key: "openai"
+            kvType: JSON
+            value: "{{ outputs.openai.choices[0].message.content }}"
+
+      - id: claude_branch
+        type: io.kestra.plugin.core.flow.Sequential
+        tasks:
+          - id: claude
+            type: io.kestra.plugin.anthropic.ChatCompletion
+            apiKey: "{{ secret('ANTHROPIC_API_KEY') }}"
+            model: claude-sonnet-5
+            system: "{{ vars.system_prompt }}"
+            messages:
+              - type: USER
+                content: "{{ outputs.process_stats.vars.prompt }}"
+          - id: save_claude
+            type: io.kestra.plugin.core.kv.Set
+            key: "claude"
+            kvType: JSON
+            value: "{{ outputs.claude.outputText }}"
+
+      - id: mistral_branch
+        type: io.kestra.plugin.core.flow.Sequential
+        tasks:
+          - id: mistral
+            type: io.kestra.plugin.mistral.ChatCompletion
+            apiKey: "{{ secret('MISTRAL_API_KEY') }}"
+            modelName: mistral-medium-latest
+            messages:
+              - type: SYSTEM
+                content: "{{ vars.system_prompt }}"
+              - type: USER
+                content: "{{ outputs.process_stats.vars.prompt }}"
+          - id: save_mistral
+            type: io.kestra.plugin.core.kv.Set
+            key: "mistral"
+            kvType: JSON
+            value: "{{ outputs.mistral.response }}"
+
+      - id: gemini_branch
+        type: io.kestra.plugin.core.flow.Sequential
+        tasks:
+          - id: gemini
+            type: io.kestra.plugin.gemini.ChatCompletion
+            apiKey: "{{ secret('GEMINI_API_KEY') }}"
+            model: gemini-3.5-flash
+            messages:
+              - type: SYSTEM
+                content: "{{ vars.system_prompt }}"
+              - type: USER
+                content: "{{ outputs.process_stats.vars.prompt }}"
+          - id: save_gemini
+            type: io.kestra.plugin.core.kv.Set
+            key: "gemini"
+            kvType: JSON
+            value: "{{ outputs.gemini.predictions[0].content }}"
