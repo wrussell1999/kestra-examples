@@ -1,0 +1,27 @@
+id: collect_predictions
+namespace: worldcup
+
+inputs:
+  - id: country
+    type: SELECT
+    displayName: World Cup 2026 Winner
+    values:
+      - france
+      - morocco
+      - spain
+      - belgium
+      - norway
+      - england
+      - argentina
+      - switzerland
+
+tasks:
+  - id: prediction
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ labels.system.username }} predicts {{ inputs.country }}"
+
+  - id: set_prediction
+    type: io.kestra.plugin.core.kv.Set
+    key: "{{ labels.system.username | substringBefore('@') }}"
+    value: "{{ inputs.country }}"
+    kvType: STRING
