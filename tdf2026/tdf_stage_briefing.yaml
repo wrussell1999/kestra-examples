@@ -1,0 +1,135 @@
+id: tdf_stage_briefing
+namespace: tour_de_france
+
+concurrency:
+  limit: 1
+
+triggers:
+  - id: post_stage
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 19 * * *"
+    timezone: Europe/Paris
+    # only fire during the 2026 race window; after stage 21 (26 Jul) the
+    # schedule stops firing on its own instead of running empty every night
+    conditions:
+      - type: io.kestra.plugin.core.condition.DateTimeBetween
+        date: "{{ trigger.date }}"
+        after: "2026-07-04T00:00:00+02:00"
+        before: "2026-07-27T00:00:00+02:00"
+
+tasks:
+  - id: get_state
+    type: io.kestra.plugin.core.kv.Get
+    key: tdf_2026_stages
+    errorOnMissing: false
+
+  - id: fetch_and_merge
+    type: io.kestra.plugin.scripts.python.Script
+    retry:
+      type: constant
+      interval: PT2M
+      maxAttempt: 3
+    namespaceFiles:
+      enabled: true
+    dependencies:
+      - curl_cffi
+      - procyclingstats
+      - kestra
+    env:
+      EXECUTION_DATE: "{{ trigger.date ?? execution.startDate }}"
+      PRIOR_STAGES: "{{ outputs.get_state.value ?? '{}' }}"
+    outputFiles:
+      - stages.json
+    script: |
+      import datetime
+      import json
+      import os
+
+      from kestra import Kestra
+
+      from fetch_stage import fetch_stage
+
+      # 2026 rest days: no stage races, and every stage number after one shifts
+      # back by one, so these drive both the skip and the numbering correction.
+      REST_DAYS = {datetime.date(2026, 7, 13), datetime.date(2026, 7, 20)}
+      RACE_START = datetime.date(2026, 7, 4)
+      TOTAL_STAGES = 21
+
+      exec_date = datetime.date.fromisoformat(os.environ["EXECUTION_DATE"][:10])
+      stages = json.loads(os.environ["PRIOR_STAGES"])
+
+
+      def skip(message, stage):
+          # leave state untouched and let the runIf tasks downstream stand down
+          with open("stages.json", "w") as f:
+              json.dump(stages, f)
+          # stage doubles as the execution label, so it's never empty
+          Kestra.outputs({"has_data": False, "stage": stage})
+          print(message)
+
+
+      if exec_date in REST_DAYS:
+          skip(f"{exec_date} is a rest day, skipping", "rest day")
+      else:
+          # calendar days run ahead of stage numbers once a rest day has passed
+          rest_days_before = sum(1 for d in REST_DAYS if d < exec_date)
+          stage_number = (exec_date - RACE_START).days + 1 - rest_days_before
+
+          if not 1 <= stage_number <= TOTAL_STAGES:
+              skip(f"stage {stage_number} is outside the 2026 tour, skipping", "outside tour")
+          else:
+              data = fetch_stage(stage_number)
+              if data is None:
+                  skip(f"stage {stage_number}: no results yet, skipping", str(stage_number))
+              else:
+                  stages[str(stage_number)] = data
+                  with open("stages.json", "w") as f:
+                      json.dump(stages, f)
+                  Kestra.outputs({"has_data": True, "stage": str(stage_number)})
+                  print(f"stored stage {stage_number}, {len(stages)} stages total")
+
+  - id: label_stage
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      stage: "{{ outputs.fetch_and_merge.vars.stage }}"
+
+  - id: save_state
+    type: io.kestra.plugin.core.kv.Set
+    key: tdf_2026_stages
+    kvType: JSON
+    value: "{{ read(outputs.fetch_and_merge.outputFiles['stages.json']) }}"
+
+  - id: analyze
+    type: io.kestra.plugin.scripts.python.Commands
+    runIf: "{{ outputs.fetch_and_merge.vars.has_data }}"
+    namespaceFiles:
+      enabled: true
+    dependencies:
+      - matplotlib
+      - kestra
+    inputFiles:
+      stages.json: "{{ outputs.fetch_and_merge.outputFiles['stages.json'] }}"
+    outputFiles:
+      - gc_trend.png
+      - briefing.txt
+    commands:
+      - python analyze.py stages.json .
+
+  - id: send_briefing
+    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
+    runIf: "{{ outputs.fetch_and_merge.vars.has_data }}"
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": {{ read(outputs.analyze.outputFiles['briefing.txt']) | json }}
+      }
+
+  - id: upload_chart
+    type: io.kestra.plugin.slack.app.files.Upload
+    runIf: "{{ outputs.fetch_and_merge.vars.has_data }}"
+    token: "{{ secret('BOT_TOKEN') }}"
+    channels: ["#tour-de-france"]
+    from: "{{ outputs.analyze.outputFiles['gc_trend.png'] }}"
+    filename: "gc_trend.png"
+    title: "GC trend after stage"
+    altTxt: "General classification gap trend chart"
