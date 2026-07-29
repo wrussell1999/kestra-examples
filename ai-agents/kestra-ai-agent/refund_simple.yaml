@@ -1,0 +1,60 @@
+id: refund_simple
+namespace: company.team
+
+inputs:
+  - id: customer_message
+    type: STRING
+    defaults: |
+      Two bottles in my order arrived broken and wine leaked all over the box.
+      I would like a refund for the damaged items.
+
+tasks:
+  - id: assess
+    type: io.kestra.plugin.ai.agent.AIAgent
+    provider:
+      type: io.kestra.plugin.ai.provider.GoogleGemini
+      modelName: gemini-3.5-flash
+      apiKey: "{{ secret('GEMINI_API_KEY') }}"
+    systemMessage: |
+      You are a refund triage assistant for an online wine store.
+      Read the customer's message and decide how to handle their refund request.
+      Return your reasoning in one short sentence.
+    prompt: "{{ inputs.customer_message }}"
+    configuration:
+      responseFormat:
+        type: JSON
+        jsonSchema:
+          type: object
+          required: ["decision", "reasoning"]
+          properties:
+            decision:
+              type: string
+              enum: ["full_refund", "partial_refund", "deny", "escalate"]
+            reasoning:
+              type: string
+
+  - id: log_decision
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      Decision: {{ outputs.assess.jsonOutput.decision }}
+      Reasoning: {{ outputs.assess.jsonOutput.reasoning }}
+
+  - id: human_review
+    type: io.kestra.plugin.ee.flow.HumanTask
+    assignment:
+      users:
+        - wrussell@kestra.io
+    onResume:
+      - id: reviewer_note
+        type: STRING
+        defaults: ""
+        description: "Confirm the decision ({{ outputs.assess.jsonOutput.decision }}) and add an optional note"
+
+  - id: apply_decision
+    type: io.kestra.plugin.core.log.Log
+    message: "APPLIED: {{ outputs.assess.jsonOutput.decision }}. Confirmed by {{ outputs.human_review.resumed.by ?? 'reviewer' }} at {{ outputs.human_review.resumed.on }}. Note: {{ outputs.human_review.onResume.reviewer_note }}"
+
+outputs:
+  - id: decision
+    type: STRING
+    value: "{{ outputs.assess.jsonOutput.decision }}"
